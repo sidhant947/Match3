@@ -78,25 +78,21 @@ class _HomeViewState extends ConsumerState<HomeView>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF5C68D4), Color(0xFF3E49B4)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          color: const Color(0xFF242424),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withValues(alpha: 0.4),
               offset: const Offset(0, 4),
               blurRadius: 6,
             ),
           ],
-          border: Border.all(color: const Color(0xFF8692FF), width: 2.0),
+          border: Border.all(color: const Color(0xFF383838), width: 1.5),
         ),
         child: Icon(
           icon,
           size: iconSize,
-          color: iconColor ?? const Color(0xFFFFF9E6),
+          color: iconColor ?? Colors.white,
           shadows: const [
             Shadow(
               offset: Offset(0, 1.5),
@@ -120,9 +116,9 @@ class _HomeViewState extends ConsumerState<HomeView>
             center: Alignment(0, -0.2),
             radius: 1.3,
             colors: [
-              Color(0xFF63B3FF),
-              Color(0xFF1E90FF),
-              Color(0xFF1058B3),
+              Color(0xFF222222),
+              Color(0xFF161616),
+              Color(0xFF0F0F0F),
             ],
             stops: [0.0, 0.65, 1.0],
           ),
@@ -141,46 +137,21 @@ class _HomeViewState extends ConsumerState<HomeView>
                           _launchUrl('https://github.com/sidhant947/Match3'),
                     ),
                     if (state.progress != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFB073), Color(0xFFFF8523)],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.25),
-                              offset: const Offset(0, 4),
-                              blurRadius: 4,
+                      Text(
+                        'LEVEL ${state.progress!.currentLevel}',
+                        style: const TextStyle(
+                          fontFamily: 'BebasNeue',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 1.5,
+                          shadows: [
+                            Shadow(
+                              offset: Offset(0, 1.5),
+                              blurRadius: 3.0,
+                              color: Colors.black54,
                             ),
                           ],
-                          border: Border.all(color: const Color(0xFFFFCAB3), width: 2.0),
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'LEVEL ${state.progress!.currentLevel}',
-                            style: const TextStyle(
-                              fontFamily: 'BebasNeue',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 1.0,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 1.5),
-                                  blurRadius: 2.0,
-                                  color: Colors.black45,
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
                       )
                     else
@@ -224,7 +195,6 @@ class _HomeViewState extends ConsumerState<HomeView>
                       Positioned.fill(
                         child: GemWidget(
                           gemType: GemType.values[_gemIndex],
-                          isBlocker: false,
                         ),
                       ),
                     ],

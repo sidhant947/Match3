@@ -1,353 +1,503 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:match3/data/repositories/progress_repository.dart';
-import 'package:match3/domain/models/gem.dart';
-import 'package:match3/domain/models/level_config.dart';
-import 'package:match3/domain/use_cases/match3_board_generator.dart';
-import 'package:match3/domain/use_cases/match3_engine.dart';
+import 'package:match3/domain/models/game_state_model.dart';
+import 'package:match3/domain/models/level_goal.dart';
+import 'package:match3/domain/models/tile_model.dart';
 
-@immutable
-class GameViewModelState {
-  const GameViewModelState({
-    this.levelNumber = 1,
-    this.levelConfig,
-    this.board = const [],
-    this.selectedGem,
-    this.movesLeft = 0,
-    this.score = 0,
-    this.elapsedSeconds = 0,
-    this.collectedGems = const {},
-    this.isLoading = false,
-    this.isComplete = false,
-    this.isFailed = false,
-    this.canUndo = false,
-    this.canShuffle = true,
-    this.matchedPositions = const [],
-    this.error,
-    this.earnedStars = 0,
-    this.isZenMode = false,
+class GameViewModel extends ChangeNotifier {
+  final ProgressRepository progressRepository;
+  final Random _random = Random();
+
+  static const List<String> _allFruits = ['🍎', '🍋', '🍇', '🍉', '🍍', '🍓', '🍊', '🍒'];
+
+  int _targetScore = 1000;
+  int _moves = 25;
+  int _fruitVarietyCount = 5;
+  int _star1Score = 500;
+  int _star2Score = 1000;
+  int _star3Score = 1500;
+  bool _isZenMode = false;
+  late LevelGoal _currentGoal;
+
+  GameStateModel _state = const GameStateModel(
+    tiles: [],
+    score: 0,
+    highScore: 0,
+    movesLeft: 25,
+    targetScore: 1000,
+    isGameOver: false,
+    rows: 8,
+    cols: 8,
+    comboCount: 0,
+    levelNumber: 1,
+  );
+
+  GameStateModel get state => _state;
+  bool _isProcessing = false;
+  bool get isProcessing => _isProcessing;
+
+  GameViewModel({
+    required this.progressRepository,
   });
 
-  final int levelNumber;
-  final LevelConfig? levelConfig;
-  final List<BoardGem> board;
-  final BoardGem? selectedGem;
-  final int movesLeft;
-  final int score;
-  final int elapsedSeconds;
-  final Map<String, int> collectedGems;
-  final bool isLoading;
-  final bool isComplete;
-  final bool isFailed;
-  final bool canUndo;
-  final bool canShuffle;
-  final List<BoardPosition> matchedPositions;
-  final String? error;
-  final int earnedStars;
-  final bool isZenMode;
+  LevelGoal _generateLevelGoal(int level, bool isZenMode) {
+    if (isZenMode) {
+      return const LevelGoal(
+        type: LevelGoalType.score,
+        title: 'ENDLESS RELAXATION',
+        description: 'Match and relax without move limits',
+        targetValue: 999999,
+      );
+    }
 
-  GameViewModelState copyWith({
-    int? levelNumber,
-    LevelConfig? levelConfig,
-    List<BoardGem>? board,
-    BoardGem? selectedGem,
-    bool clearSelectedGem = false,
-    int? movesLeft,
-    int? score,
-    int? elapsedSeconds,
-    Map<String, int>? collectedGems,
-    bool? isLoading,
-    bool? isComplete,
-    bool? isFailed,
-    bool? canUndo,
-    bool? canShuffle,
-    List<BoardPosition>? matchedPositions,
-    String? error,
-    int? earnedStars,
-    bool? isZenMode,
-  }) {
-    return GameViewModelState(
-      levelNumber: levelNumber ?? this.levelNumber,
-      levelConfig: levelConfig ?? this.levelConfig,
-      board: board ?? this.board,
-      selectedGem: clearSelectedGem ? null : (selectedGem ?? this.selectedGem),
-      movesLeft: movesLeft ?? this.movesLeft,
-      score: score ?? this.score,
-      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
-      collectedGems: collectedGems ?? this.collectedGems,
-      isLoading: isLoading ?? this.isLoading,
-      isComplete: isComplete ?? this.isComplete,
-      isFailed: isFailed ?? this.isFailed,
-      canUndo: canUndo ?? this.canUndo,
-      canShuffle: canShuffle ?? this.canShuffle,
-      matchedPositions: matchedPositions ?? this.matchedPositions,
-      error: error,
-      earnedStars: earnedStars ?? this.earnedStars,
-      isZenMode: isZenMode ?? this.isZenMode,
+    final cycle = (level - 1) % 4;
+    final available = _getAvailableFruits((4 + (level ~/ 10)).clamp(4, _allFruits.length));
+    final fruit = available[(level - 1) % available.length];
+
+    switch (cycle) {
+      case 0:
+        final neededFruit = min(12 + (level * 2), 45);
+        return LevelGoal(
+          type: LevelGoalType.targetFruit,
+          title: 'HARVEST QUEST',
+          description: 'Collect $neededFruit $fruit',
+          targetValue: neededFruit,
+          targetFruitEmoji: fruit,
+        );
+      case 1:
+        final specialsNeeded = min(2 + (level ~/ 4), 8);
+        return LevelGoal(
+          type: LevelGoalType.createSpecials,
+          title: 'SPECIAL FUSION',
+          description: 'Create $specialsNeeded striped/wrapped fruits',
+          targetValue: specialsNeeded,
+        );
+      case 2:
+        final combosNeeded = min(2 + (level ~/ 5), 7);
+        return LevelGoal(
+          type: LevelGoalType.comboMaster,
+          title: 'COMBO FEVER',
+          description: 'Trigger $combosNeeded combo cascades',
+          targetValue: combosNeeded,
+        );
+      case 3:
+      default:
+        final pts = 1200 + (level - 1) * 450;
+        return LevelGoal(
+          type: LevelGoalType.score,
+          title: 'HIGH ROLLER',
+          description: 'Reach $pts points',
+          targetValue: pts,
+        );
+    }
+  }
+
+  Future<void> initGame({int level = 1, bool isZenMode = false}) async {
+    _isZenMode = isZenMode;
+    _currentGoal = _generateLevelGoal(level, isZenMode);
+
+    _targetScore = _currentGoal.type == LevelGoalType.score
+        ? _currentGoal.targetValue
+        : (800 + (level - 1) * 300);
+
+    _moves = isZenMode ? 999 : max(14, 28 - (level ~/ 6));
+    _fruitVarietyCount = (4 + (level ~/ 10)).clamp(4, _allFruits.length);
+    _star1Score = (_targetScore * 0.6).round();
+    _star2Score = _targetScore;
+    _star3Score = (_targetScore * 1.5).round();
+
+    final userProgress = await progressRepository.getProgress();
+    final effectiveHighScore = userProgress.levelStars[level.toString()] != null
+        ? userProgress.levelStars[level.toString()]! * 1000
+        : 0;
+
+    final initialTiles = _generateInitialBoard(8, 8, _fruitVarietyCount);
+    _state = GameStateModel(
+      tiles: initialTiles,
+      score: 0,
+      highScore: effectiveHighScore,
+      movesLeft: _moves,
+      targetScore: _targetScore,
+      goal: _currentGoal,
+      isGameOver: false,
+      rows: 8,
+      cols: 8,
+      comboCount: 0,
+      levelNumber: level,
+      star1Score: _star1Score,
+      star2Score: _star2Score,
+      star3Score: _star3Score,
+      starsEarned: 0,
     );
+    _isProcessing = false;
+    notifyListeners();
+  }
+
+  int calculateStars(int score) {
+    if (score >= _star3Score) return 3;
+    if (score >= _star2Score) return 2;
+    if (score >= _star1Score) return 1;
+    return 1;
+  }
+
+  List<String> _getAvailableFruits(int count) {
+    final clampedCount = count.clamp(4, _allFruits.length);
+    return _allFruits.sublist(0, clampedCount);
+  }
+
+  List<TileModel> _generateInitialBoard(int rows, int cols, int fruitCount) {
+    final availableFruits = _getAvailableFruits(fruitCount);
+    final tiles = <TileModel>[];
+    for (int r = 0; r < rows; r++) {
+      for (int c = 0; c < cols; c++) {
+        final allowedFruits = List<String>.from(availableFruits);
+        if (c >= 2) {
+          final left1 = tiles.firstWhere((t) => t.row == r && t.col == c - 1);
+          final left2 = tiles.firstWhere((t) => t.row == r && t.col == c - 2);
+          if (left1.emoji == left2.emoji) {
+            allowedFruits.remove(left1.emoji);
+          }
+        }
+        if (r >= 2) {
+          final up1 = tiles.firstWhere((t) => t.row == r - 1 && t.col == c);
+          final up2 = tiles.firstWhere((t) => t.row == r - 2 && t.col == c);
+          if (up1.emoji == up2.emoji) {
+            allowedFruits.remove(up1.emoji);
+          }
+        }
+        final emoji = allowedFruits[_random.nextInt(allowedFruits.length)];
+        tiles.add(TileModel(
+          id: '${DateTime.now().microsecondsSinceEpoch}_${r}_${c}_${_random.nextInt(1000)}',
+          row: r,
+          col: c,
+          emoji: emoji,
+        ));
+      }
+    }
+    return tiles;
+  }
+
+  void _updateGoalProgress({
+    int scoreAdded = 0,
+    List<TileModel> clearedTiles = const [],
+    int specialsCreatedCount = 0,
+    bool isCombo = false,
+  }) {
+    int currentVal = _currentGoal.currentValue;
+
+    switch (_currentGoal.type) {
+      case LevelGoalType.score:
+        currentVal = _state.score + scoreAdded;
+        break;
+      case LevelGoalType.targetFruit:
+        final matchingFruitCount = clearedTiles.where((t) => t.emoji == _currentGoal.targetFruitEmoji).length;
+        currentVal += matchingFruitCount;
+        break;
+      case LevelGoalType.createSpecials:
+        currentVal += specialsCreatedCount;
+        break;
+      case LevelGoalType.comboMaster:
+        if (isCombo) {
+          currentVal += 1;
+        }
+        break;
+    }
+
+    _currentGoal = _currentGoal.copyWith(currentValue: currentVal);
+  }
+
+  Future<bool> swapTiles(int r1, int c1, int r2, int c2) async {
+    if (_isProcessing || _state.isGameOver) return false;
+    _isProcessing = true;
+
+    final tile1 = _state.getTile(r1, c1);
+    final tile2 = _state.getTile(r2, c2);
+    if (tile1 == null || tile2 == null) {
+      _isProcessing = false;
+      return false;
+    }
+
+    final swappedTiles = _state.tiles.map((tile) {
+      if (tile.id == tile1.id) {
+        return tile.copyWith(row: r2, col: c2);
+      } else if (tile.id == tile2.id) {
+        return tile.copyWith(row: r1, col: c1);
+      }
+      return tile;
+    }).toList();
+
+    _state = _state.copyWith(tiles: swappedTiles);
+    notifyListeners();
+
+    if (tile1.type == TileType.colorBomb || tile2.type == TileType.colorBomb) {
+      final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
+      _state = _state.copyWith(movesLeft: newMoves);
+      await _handleColorBombSwap(tile1, tile2);
+      _isProcessing = false;
+      return true;
+    }
+
+    final matches = _findMatches(swappedTiles);
+    if (matches.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      _state = _state.copyWith(tiles: _state.tiles.map((tile) {
+        if (tile.id == tile1.id) {
+          return tile.copyWith(row: r1, col: c1);
+        } else if (tile.id == tile2.id) {
+          return tile.copyWith(row: r2, col: c2);
+        }
+        return tile;
+      }).toList());
+      _isProcessing = false;
+      notifyListeners();
+      return false;
+    }
+
+    final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
+    _state = _state.copyWith(movesLeft: newMoves, comboCount: 0);
+    notifyListeners();
+
+    await _processMatchesAndCascade();
+    _isProcessing = false;
+    return true;
+  }
+
+  Future<void> _handleColorBombSwap(TileModel tile1, TileModel tile2) async {
+    final bomb = tile1.type == TileType.colorBomb ? tile1 : tile2;
+    final other = tile1.type == TileType.colorBomb ? tile2 : tile1;
+
+    final targetEmoji = other.emoji;
+    final toDestroy = _state.tiles.where((t) => t.emoji == targetEmoji || t.id == bomb.id).toList();
+
+    final remaining = _state.tiles.where((t) => !toDestroy.contains(t)).toList();
+    final newScore = _state.score + toDestroy.length * 60;
+    _updateGoalProgress(scoreAdded: toDestroy.length * 60, clearedTiles: toDestroy);
+
+    final stars = calculateStars(newScore);
+
+    _state = _state.copyWith(
+      tiles: remaining,
+      score: newScore,
+      goal: _currentGoal,
+      highScore: max(newScore, _state.highScore),
+      comboCount: _state.comboCount + 1,
+      starsEarned: stars,
+    );
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    final cascaded = _cascadeBoard(_state.tiles);
+    _state = _state.copyWith(tiles: cascaded);
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 350));
+
+    await _processMatchesAndCascade();
+  }
+
+  Future<void> _processMatchesAndCascade() async {
+    while (true) {
+      final scanResult = _scanAndGenerateSpecials(_state.tiles);
+      final rawMatches = scanResult.matched;
+      if (rawMatches.isEmpty) break;
+
+      final exploded = _resolveExplosions(rawMatches, _state.tiles);
+      final explodedIds = exploded.map((e) => e.id).toSet();
+
+      final updatedTiles = _state.tiles.map((tile) {
+        if (scanResult.specials.containsKey(tile.id)) {
+          final type = scanResult.specials[tile.id]!;
+          return tile.copyWith(
+            type: type,
+            emoji: type == TileType.colorBomb ? '🍭' : tile.emoji,
+          );
+        }
+        return tile;
+      }).toList();
+
+      final keptSpecialIds = scanResult.specials.keys.toSet();
+      final finalExplodedIds = explodedIds.difference(keptSpecialIds);
+
+      final scoreIncrease = finalExplodedIds.length * 50;
+      final newScore = _state.score + scoreIncrease;
+
+      final destroyedTiles = _state.tiles.where((t) => finalExplodedIds.contains(t.id)).toList();
+      _updateGoalProgress(
+        scoreAdded: scoreIncrease,
+        clearedTiles: destroyedTiles,
+        specialsCreatedCount: scanResult.specials.length,
+        isCombo: _state.comboCount > 0,
+      );
+
+      final stars = calculateStars(newScore);
+      final remaining = updatedTiles.where((t) => !finalExplodedIds.contains(t.id)).toList();
+
+      _state = _state.copyWith(
+        tiles: remaining,
+        score: newScore,
+        goal: _currentGoal,
+        highScore: max(newScore, _state.highScore),
+        comboCount: _state.comboCount + 1,
+        starsEarned: stars,
+      );
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      final cascadedTiles = _cascadeBoard(_state.tiles);
+      _state = _state.copyWith(tiles: cascadedTiles);
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 350));
+    }
+
+    final isGoalCompleted = _currentGoal.isCompleted;
+    if (!_isZenMode && (_state.movesLeft <= 0 || isGoalCompleted)) {
+      final finalStars = calculateStars(_state.score);
+      _state = _state.copyWith(
+        isGameOver: true,
+        starsEarned: finalStars,
+      );
+      if (isGoalCompleted) {
+        await progressRepository.completeLevel(
+          _state.levelNumber,
+          finalStars,
+        );
+      }
+      notifyListeners();
+    }
+  }
+
+  ScanResult _scanAndGenerateSpecials(List<TileModel> tiles) {
+    final matched = <TileModel>{};
+    final specials = <String, TileType>{};
+
+    for (int r = 0; r < _state.rows; r++) {
+      int matchStart = 0;
+      for (int c = 1; c <= _state.cols; c++) {
+        final current = c < _state.cols ? tiles.firstWhere((t) => t.row == r && t.col == c) : null;
+        final startTile = tiles.firstWhere((t) => t.row == r && t.col == matchStart);
+
+        if (current != null && current.emoji == startTile.emoji && current.type != TileType.colorBomb) {
+          continue;
+        } else {
+          final length = c - matchStart;
+          if (length >= 3) {
+            for (int i = matchStart; i < c; i++) {
+              final t = tiles.firstWhere((item) => item.row == r && item.col == i);
+              matched.add(t);
+            }
+            if (length == 4) {
+              final specialTile = tiles.firstWhere((item) => item.row == r && item.col == matchStart + 1);
+              specials[specialTile.id] = TileType.stripedHorizontal;
+            } else if (length >= 5) {
+              final specialTile = tiles.firstWhere((item) => item.row == r && item.col == matchStart + 2);
+              specials[specialTile.id] = TileType.colorBomb;
+            }
+          }
+          matchStart = c;
+        }
+      }
+    }
+
+    for (int c = 0; c < _state.cols; c++) {
+      int matchStart = 0;
+      for (int r = 1; r <= _state.rows; r++) {
+        final current = r < _state.rows ? tiles.firstWhere((t) => t.row == r && t.col == c) : null;
+        final startTile = tiles.firstWhere((t) => t.row == matchStart && t.col == c);
+
+        if (current != null && current.emoji == startTile.emoji && current.type != TileType.colorBomb) {
+          continue;
+        } else {
+          final length = r - matchStart;
+          if (length >= 3) {
+            for (int i = matchStart; i < r; i++) {
+              final t = tiles.firstWhere((item) => item.row == i && item.col == c);
+              matched.add(t);
+            }
+            if (length == 4) {
+              final specialTile = tiles.firstWhere((item) => item.row == matchStart + 1 && item.col == c);
+              specials[specialTile.id] = TileType.stripedVertical;
+            } else if (length >= 5) {
+              final specialTile = tiles.firstWhere((item) => item.row == matchStart + 2 && item.col == c);
+              specials[specialTile.id] = TileType.colorBomb;
+            }
+          }
+          matchStart = r;
+        }
+      }
+    }
+
+    return ScanResult(matched: matched.toList(), specials: specials);
+  }
+
+  List<TileModel> _resolveExplosions(List<TileModel> initialMatches, List<TileModel> allTiles) {
+    final exploded = <TileModel>{...initialMatches};
+    final queue = List<TileModel>.from(initialMatches);
+
+    while (queue.isNotEmpty) {
+      final current = queue.removeLast();
+      if (current.type == TileType.stripedHorizontal) {
+        final rowTiles = allTiles.where((t) => t.row == current.row && !exploded.contains(t));
+        for (final t in rowTiles) {
+          exploded.add(t);
+          queue.add(t);
+        }
+      } else if (current.type == TileType.stripedVertical) {
+        final colTiles = allTiles.where((t) => t.col == current.col && !exploded.contains(t));
+        for (final t in colTiles) {
+          exploded.add(t);
+          queue.add(t);
+        }
+      } else if (current.type == TileType.wrapped) {
+        final blastRadius = allTiles.where((t) =>
+            (t.row - current.row).abs() <= 1 &&
+            (t.col - current.col).abs() <= 1 &&
+            !exploded.contains(t));
+        for (final t in blastRadius) {
+          exploded.add(t);
+          queue.add(t);
+        }
+      }
+    }
+    return exploded.toList();
+  }
+
+  List<TileModel> _cascadeBoard(List<TileModel> remainingTiles) {
+    final newTiles = <TileModel>[];
+    final availableFruits = _getAvailableFruits(_fruitVarietyCount);
+
+    for (int c = 0; c < _state.cols; c++) {
+      final colTiles = remainingTiles.where((t) => t.col == c).toList()
+        ..sort((a, b) => b.row.compareTo(a.row));
+
+      int targetRow = _state.rows - 1;
+      for (final tile in colTiles) {
+        newTiles.add(tile.copyWith(row: targetRow));
+        targetRow--;
+      }
+
+      while (targetRow >= 0) {
+        final emoji = availableFruits[_random.nextInt(availableFruits.length)];
+        newTiles.add(TileModel(
+          id: '${DateTime.now().microsecondsSinceEpoch}_${targetRow}_${c}_${_random.nextInt(1000)}',
+          row: targetRow,
+          col: c,
+          emoji: emoji,
+        ));
+        targetRow--;
+      }
+    }
+    return newTiles;
+  }
+
+  List<TileModel> _findMatches(List<TileModel> tiles) {
+    return _scanAndGenerateSpecials(tiles).matched;
   }
 }
 
-class GameViewModel extends StateNotifier<GameViewModelState> {
-  GameViewModel({
-    required this.progressRepository,
-    required this.boardGenerator,
-    required this.engine,
-  }) : super(const GameViewModelState());
+class ScanResult {
+  final List<TileModel> matched;
+  final Map<String, TileType> specials;
 
-  final ProgressRepository progressRepository;
-  final Match3BoardGenerator boardGenerator;
-  final Match3Engine engine;
-
-  Timer? _timer;
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void loadLevel(int levelNumber, {bool isZenMode = false}) {
-    state = GameViewModelState(
-      levelNumber: levelNumber,
-      isLoading: true,
-      isZenMode: isZenMode,
-    );
-
-    final config = LevelDefinitions.getLevel(levelNumber);
-    final board = boardGenerator.generateBoard(
-      level: config,
-      seed: levelNumber * 1000 + 42,
-    );
-
-    state = state.copyWith(
-      levelConfig: config,
-      board: board,
-      movesLeft: config.moves,
-      isLoading: false,
-      isComplete: false,
-      isFailed: false,
-      collectedGems: {},
-      score: 0,
-      canUndo: false,
-      canShuffle: true,
-      earnedStars: 0,
-    );
-  }
-
-  void selectGem(BoardGem gem) {
-    if (state.isComplete || state.isFailed) return;
-
-    final level = state.levelConfig;
-    if (level == null) return;
-
-    // Ignore blockers and ice
-    if (level.hasBlockers && level.blockerPositions.any((p) => p.row == gem.position.row && p.col == gem.position.col)) {
-      HapticFeedback.heavyImpact().catchError((_) {});
-      return;
-    }
-
-    if (state.selectedGem == null) {
-      state = state.copyWith(selectedGem: gem);
-      HapticFeedback.mediumImpact().catchError((_) {});
-      return;
-    }
-
-    if (state.selectedGem!.id == gem.id) {
-      state = state.copyWith(clearSelectedGem: true);
-      HapticFeedback.lightImpact().catchError((_) {});
-      return;
-    }
-
-    // Check if adjacent
-    if (!state.selectedGem!.position.isAdjacentTo(gem.position)) {
-      state = state.copyWith(selectedGem: gem);
-      HapticFeedback.mediumImpact().catchError((_) {});
-      return;
-    }
-
-    // Try swap
-    _executeSwap(state.selectedGem!, gem);
-  }
-
-  Future<void> _executeSwap(BoardGem gem1, BoardGem gem2) async {
-    final level = state.levelConfig;
-    if (level == null) return;
-
-    var tempBoard = List<BoardGem>.from(state.board);
-    final idx1 = tempBoard.indexWhere((g) => g.id == gem1.id);
-    final idx2 = tempBoard.indexWhere((g) => g.id == gem2.id);
-    if (idx1 < 0 || idx2 < 0) return;
-
-    final pos1 = gem1.position;
-    final pos2 = gem2.position;
-
-    tempBoard[idx1] = gem1.copyWith(position: pos2);
-    tempBoard[idx2] = gem2.copyWith(position: pos1);
-
-    state = state.copyWith(board: tempBoard, clearSelectedGem: true);
-    HapticFeedback.mediumImpact().catchError((_) {});
-
-    await Future.delayed(const Duration(milliseconds: 250));
-
-    var matches = engine.findAllMatches(tempBoard, level);
-    if (matches.isEmpty) {
-      tempBoard[idx1] = gem1.copyWith(position: pos1);
-      tempBoard[idx2] = gem2.copyWith(position: pos2);
-      state = state.copyWith(board: tempBoard);
-      HapticFeedback.mediumImpact().catchError((_) {});
-      return;
-    }
-
-    final newMoves = state.isZenMode ? state.movesLeft : state.movesLeft - 1;
-    state = state.copyWith(movesLeft: newMoves);
-
-    while (matches.isNotEmpty) {
-      final matchedPositions = matches.expand((m) => m.matchedPositions).toList();
-      state = state.copyWith(matchedPositions: matchedPositions);
-
-      var scoreGained = 0;
-      final newCollected = Map<String, int>.from(state.collectedGems);
-      for (final match in matches) {
-        for (final pos in match.matchedPositions) {
-          final gem = tempBoard.firstWhere(
-            (g) => g.position.row == pos.row && g.position.col == pos.col,
-            orElse: () => gem1,
-          );
-          scoreGained += engine.scoreForGem(gem);
-          final key = '${gem.gem.type.index}';
-          newCollected[key] = (newCollected[key] ?? 0) + 1;
-        }
-      }
-
-      state = state.copyWith(
-        score: state.score + scoreGained,
-        collectedGems: newCollected,
-      );
-
-      HapticFeedback.lightImpact().catchError((_) {});
-
-      await Future.delayed(const Duration(milliseconds: 350));
-
-      final matchedIds = <String>{};
-      for (final match in matches) {
-        for (final pos in match.matchedPositions) {
-          final gem = tempBoard.firstWhere(
-            (g) => g.position.row == pos.row && g.position.col == pos.col,
-            orElse: () => gem1,
-          );
-          matchedIds.add(gem.id);
-        }
-      }
-      tempBoard = tempBoard.where((g) => !matchedIds.contains(g.id)).toList();
-      state = state.copyWith(board: tempBoard, matchedPositions: []);
-
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      tempBoard = engine.applyGravity(tempBoard, level);
-      state = state.copyWith(board: tempBoard);
-
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      tempBoard = engine.fillEmptySpaces(tempBoard, level, tempBoard.length);
-      state = state.copyWith(board: tempBoard);
-
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      matches = engine.findAllMatches(tempBoard, level);
-    }
-
-    if (state.isZenMode) {
-      final noValidMoves = !engine.hasValidMoves(tempBoard, level);
-      if (noValidMoves) {
-        final shuffledBoard = engine.shuffleBoard(
-          tempBoard,
-          level,
-          DateTime.now().millisecondsSinceEpoch,
-        );
-        state = state.copyWith(
-          board: shuffledBoard,
-          clearSelectedGem: true,
-        );
-      }
-      return;
-    }
-
-    final isDone = _checkObjective(level, state.score, state.collectedGems, tempBoard);
-    final noMoves = state.movesLeft <= 0;
-    final noValidMoves = !engine.hasValidMoves(tempBoard, level);
-
-    if (isDone) {
-      final stars = _calculateStars(level, state.score, state.movesLeft);
-      state = state.copyWith(isComplete: true, earnedStars: stars);
-      progressRepository
-          .completeLevel(state.levelNumber, stars)
-          .catchError((e) => debugPrint('Error saving progress: $e'));
-    } else if (noMoves) {
-      state = state.copyWith(isFailed: true);
-    } else if (noValidMoves) {
-      final shuffledBoard = engine.shuffleBoard(
-        tempBoard,
-        level,
-        DateTime.now().millisecondsSinceEpoch,
-      );
-      state = state.copyWith(
-        board: shuffledBoard,
-        clearSelectedGem: true,
-      );
-    }
-  }
-
-  bool _checkObjective(LevelConfig level, int score, Map<String, int> collected, List<BoardGem> board) {
-    switch (level.objective.objective) {
-      case LevelObjective.score:
-        return score >= level.objective.targetScore;
-      case LevelObjective.collectGems:
-        int total = 0;
-        for (final entry in level.objective.gemTypeCounts.entries) {
-          total += (collected[entry.key] ?? 0).clamp(0, entry.value);
-        }
-        return total >= level.objective.targetGems;
-      case LevelObjective.clearBoard:
-        return score >= 1200;
-    }
-  }
-
-  int _calculateStars(LevelConfig level, int score, int movesLeft) {
-    if (level.objective.objective == LevelObjective.score || level.objective.objective == LevelObjective.clearBoard) {
-      final target = level.objective.objective == LevelObjective.clearBoard ? 1200 : level.objective.targetScore;
-      if (score >= target * 2.0) return 3;
-      if (score >= target * 1.5) return 2;
-      return 1;
-    } else {
-      if (movesLeft >= 6) return 3;
-      if (movesLeft >= 3) return 2;
-      return 1;
-    }
-  }
-
-  void shuffle() {
-    if (state.isComplete || state.isFailed || !state.canShuffle) return;
-
-    final level = state.levelConfig;
-    if (level == null) return;
-
-    final newBoard = engine.shuffleBoard(state.board, level, DateTime.now().millisecondsSinceEpoch);
-
-    state = state.copyWith(
-      board: newBoard,
-      clearSelectedGem: true,
-      canShuffle: false,
-    );
-
-    HapticFeedback.heavyImpact().catchError((_) {});
-  }
-
-  void undo() {
-    state = state.copyWith(clearSelectedGem: true);
-    HapticFeedback.lightImpact().catchError((_) {});
-  }
+  ScanResult({required this.matched, required this.specials});
 }

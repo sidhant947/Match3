@@ -34,7 +34,7 @@ class AppTheme {
     fontFamily: 'BebasNeue',
     pageTransitionsTheme: _noTransitionTheme,
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.brightBlue,
+    scaffoldBackgroundColor: AppColors.charcoal,
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -49,7 +49,7 @@ class AppTheme {
       iconTheme: IconThemeData(color: AppColors.headingDark),
     ),
     dividerTheme: const DividerThemeData(
-      color: AppColors.darkBlueIndigo,
+      color: AppColors.borderCharcoal,
       thickness: 1,
     ),
     textTheme: const TextTheme(

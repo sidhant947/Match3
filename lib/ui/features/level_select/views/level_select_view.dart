@@ -29,25 +29,21 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF5C68D4), Color(0xFF3E49B4)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          color: const Color(0xFF242424),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withValues(alpha: 0.4),
               offset: const Offset(0, 4),
               blurRadius: 6,
             ),
           ],
-          border: Border.all(color: const Color(0xFF8692FF), width: 2.0),
+          border: Border.all(color: const Color(0xFF383838), width: 1.5),
         ),
         child: const Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 18,
-          color: Color(0xFFFFF9E6),
+          color: Colors.white,
         ),
       ),
     );
@@ -68,9 +64,9 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
             center: Alignment(0, -0.2),
             radius: 1.3,
             colors: [
-              Color(0xFF63B3FF),
-              Color(0xFF1E90FF),
-              Color(0xFF1058B3),
+              Color(0xFF222222),
+              Color(0xFF161616),
+              Color(0xFF0F0F0F),
             ],
             stops: [0.0, 0.65, 1.0],
           ),
@@ -93,7 +89,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
                               fontFamily: 'BebasNeue',
                               fontSize: 32,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFFFFF9E6),
+                              color: Colors.white,
                               letterSpacing: 1.5,
                               shadows: [
                                 Shadow(
@@ -219,12 +215,12 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
         ),
       );
     } else {
-      gradientColors = [const Color(0xFF3E49B4).withValues(alpha: 0.6), const Color(0xFF3E49B4).withValues(alpha: 0.6)];
-      borderColor = const Color(0xFF5C68D4);
+      gradientColors = [const Color(0xFF242424), const Color(0xFF1A1A1A)];
+      borderColor = const Color(0xFF333333);
       content = const Icon(
         Icons.lock_outline_rounded,
         size: 20,
-        color: Color(0xFFFFD1D1),
+        color: Color(0xFF777777),
       );
     }
 

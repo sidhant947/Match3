@@ -69,11 +69,11 @@ class _TangibleButtonState extends State<TangibleButton> with SingleTickerProvid
     final isInteractive = widget.onPressed != null;
 
     final List<Color> gradientColors = widget.isSecondary
-        ? [const Color(0xFF5C68D4), const Color(0xFF3E49B4)]
+        ? [const Color(0xFF2E2E2E), const Color(0xFF1E1E1E)]
         : [const Color(0xFFFFDF6D), const Color(0xFFFFCE31)];
 
     final Color strokeColor = widget.isSecondary
-        ? const Color(0xFF8692FF)
+        ? const Color(0xFF4A4A4A)
         : const Color(0xFFFFF2A3);
 
     return GestureDetector(
@@ -86,7 +86,7 @@ class _TangibleButtonState extends State<TangibleButton> with SingleTickerProvid
           return Transform.scale(
             scale: _animController.value,
             child: Opacity(
-              opacity: isInteractive ? 1.0 : 0.6,
+              opacity: isInteractive ? 1.0 : 0.5,
               child: Container(
                 height: widget.height,
                 width: double.infinity,
@@ -103,9 +103,9 @@ class _TangibleButtonState extends State<TangibleButton> with SingleTickerProvid
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withValues(alpha: 0.4),
                       offset: Offset(0, _isPressed ? 1 : 4),
-                      blurRadius: _isPressed ? 2 : 6,
+                      blurRadius: _isPressed ? 2 : 8,
                     ),
                   ],
                 ),
@@ -114,19 +114,21 @@ class _TangibleButtonState extends State<TangibleButton> with SingleTickerProvid
                   fit: BoxFit.scaleDown,
                   child: Text(
                     widget.text.toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'BebasNeue',
-                      color: Colors.white,
-                      fontSize: 18,
+                      color: widget.isSecondary ? Colors.white : const Color(0xFF1A1A1A),
+                      fontSize: 19,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 2.0,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(0, 2),
-                          blurRadius: 2.0,
-                          color: Colors.black54,
-                        ),
-                      ],
+                      shadows: widget.isSecondary
+                          ? const [
+                              Shadow(
+                                offset: Offset(0, 1.5),
+                                blurRadius: 2.0,
+                                color: Colors.black54,
+                              ),
+                            ]
+                          : null,
                     ),
                   ),
                 ),
