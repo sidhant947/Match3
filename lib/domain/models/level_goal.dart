@@ -5,6 +5,7 @@ enum LevelGoalType {
   targetFruit,
   createSpecials,
   comboMaster,
+  clearJelly,
 }
 
 @immutable

@@ -19,6 +19,9 @@ class GameStateModel {
   final int star2Score;
   final int star3Score;
   final int starsEarned;
+  final Set<String> jellyTiles;
+  final Set<String> hintTileIds;
+  final bool isShuffling;
 
   const GameStateModel({
     required this.tiles,
@@ -41,6 +44,9 @@ class GameStateModel {
     this.star2Score = 1000,
     this.star3Score = 1500,
     this.starsEarned = 0,
+    this.jellyTiles = const {},
+    this.hintTileIds = const {},
+    this.isShuffling = false,
   });
 
   TileModel? getTile(int row, int col) {
@@ -67,6 +73,9 @@ class GameStateModel {
     int? star2Score,
     int? star3Score,
     int? starsEarned,
+    Set<String>? jellyTiles,
+    Set<String>? hintTileIds,
+    bool? isShuffling,
   }) {
     return GameStateModel(
       tiles: tiles ?? this.tiles,
@@ -84,6 +93,9 @@ class GameStateModel {
       star2Score: star2Score ?? this.star2Score,
       star3Score: star3Score ?? this.star3Score,
       starsEarned: starsEarned ?? this.starsEarned,
+      jellyTiles: jellyTiles ?? this.jellyTiles,
+      hintTileIds: hintTileIds ?? this.hintTileIds,
+      isShuffling: isShuffling ?? this.isShuffling,
     );
   }
 }

@@ -132,6 +132,9 @@ class _GameViewState extends ConsumerState<GameView> {
                                 ] else if (state.goal.type == LevelGoalType.comboMaster) ...[
                                   const Icon(Icons.flash_on_rounded, color: Color(0xFFFF8523), size: 20),
                                   const SizedBox(width: 8),
+                                ] else if (state.goal.type == LevelGoalType.clearJelly) ...[
+                                  const Icon(Icons.ac_unit_rounded, color: Color(0xFF64D2FF), size: 20),
+                                  const SizedBox(width: 8),
                                 ],
                                 Expanded(
                                   child: Column(
@@ -247,6 +250,44 @@ class _GameViewState extends ConsumerState<GameView> {
                       ),
                     ],
                   ),
+                  if (state.isShuffling)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        alignment: Alignment.center,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF222222),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFFFCE31), width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFFCE31).withValues(alpha: 0.3),
+                                blurRadius: 16,
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shuffle_rounded, color: Color(0xFFFFCE31), size: 24),
+                              SizedBox(width: 10),
+                              Text(
+                                'NO MOVES! SHUFFLING...',
+                                style: TextStyle(
+                                  fontFamily: 'BebasNeue',
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFFFCE31),
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   if (state.isGameOver && !widget.isZenMode)
                     _buildOverlay(
                       title: isWin ? 'LEVEL COMPLETE!' : 'OUT OF MOVES!',

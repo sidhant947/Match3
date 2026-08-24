@@ -16,6 +16,10 @@ class Match3Game extends FlameGame {
   int? selectedRow;
   int? selectedCol;
 
+  double _shakeTimer = 0.0;
+  double _shakeIntensity = 0.0;
+  final Random _random = Random();
+
   Match3Game({required this.viewModel});
 
   @override
@@ -54,6 +58,26 @@ class Match3Game extends FlameGame {
     }
   }
 
+  void triggerShake(double intensity) {
+    _shakeIntensity = intensity;
+    _shakeTimer = 0.25;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (_shakeTimer > 0) {
+      _shakeTimer -= dt;
+      if (_shakeTimer <= 0) {
+        camera.viewfinder.position = Vector2.zero();
+      } else {
+        final offsetX = (_random.nextDouble() * 2 - 1) * _shakeIntensity;
+        final offsetY = (_random.nextDouble() * 2 - 1) * _shakeIntensity;
+        camera.viewfinder.position = Vector2(offsetX, offsetY);
+      }
+    }
+  }
+
   void _syncWithViewModel() {
     final currentTiles = viewModel.state.tiles;
     final activeIds = currentTiles.map((t) => t.id).toSet();
@@ -65,6 +89,35 @@ class Match3Game extends FlameGame {
         comp.isDestroying = true;
         _spawnMatchParticles(comp.position.x + cellSize / 2, comp.position.y + cellSize / 2, comp.emoji);
         _spawnScorePopup(comp.position.x + cellSize / 2, comp.position.y + cellSize / 2);
+
+        if (comp.type == TileType.stripedHorizontal) {
+          add(LaserBeamComponent(
+            x: startX + (cellSize * viewModel.state.cols) / 2,
+            y: startY + comp.row * cellSize + cellSize / 2,
+            width: cellSize * viewModel.state.cols,
+            height: cellSize * 0.45,
+            isHorizontal: true,
+          ));
+          triggerShake(3.0);
+        } else if (comp.type == TileType.stripedVertical) {
+          add(LaserBeamComponent(
+            x: startX + comp.col * cellSize + cellSize / 2,
+            y: startY + (cellSize * viewModel.state.rows) / 2,
+            width: cellSize * 0.45,
+            height: cellSize * viewModel.state.rows,
+            isHorizontal: false,
+          ));
+          triggerShake(3.0);
+        } else if (comp.type == TileType.wrapped) {
+          add(ShockwaveComponent(
+            x: comp.position.x + cellSize / 2,
+            y: comp.position.y + cellSize / 2,
+            maxRadius: cellSize * 1.8,
+          ));
+          triggerShake(4.5);
+        } else if (comp.type == TileType.colorBomb) {
+          triggerShake(6.0);
+        }
       }
     }
 
@@ -96,10 +149,9 @@ class Match3Game extends FlameGame {
 
   void _spawnMatchParticles(double x, double y, String emoji) {
     if (cellSize <= 0) return;
-    final random = Random();
     for (int i = 0; i < 8; i++) {
-      final angle = random.nextDouble() * pi * 2;
-      final speed = 100.0 + random.nextDouble() * 120.0;
+      final angle = _random.nextDouble() * pi * 2;
+      final speed = 100.0 + _random.nextDouble() * 120.0;
       final vx = cos(angle) * speed;
       final vy = sin(angle) * speed;
       final p = ParticleComponent(
@@ -122,6 +174,7 @@ class Match3Game extends FlameGame {
 
   void handleTapAt(Offset localPosition) {
     if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    viewModel.clearHints();
 
     final col = ((localPosition.dx - startX) / cellSize).floor();
     final row = ((localPosition.dy - startY) / cellSize).floor();
@@ -153,6 +206,7 @@ class Match3Game extends FlameGame {
 
   void handleSwipeAt(Offset startPos, Offset endPos) {
     if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    viewModel.clearHints();
 
     selectedRow = null;
     selectedCol = null;
@@ -199,6 +253,14 @@ class Match3Game extends FlameGame {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
+    final jellyBgPaint = Paint()
+      ..color = const Color(0xFF64D2FF).withValues(alpha: 0.38)
+      ..style = PaintingStyle.fill;
+    final jellyBorderPaint = Paint()
+      ..color = const Color(0xFF8CE0FF).withValues(alpha: 0.75)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
     for (int r = 0; r < viewModel.state.rows; r++) {
       for (int c = 0; c < viewModel.state.cols; c++) {
         final cellRect = Rect.fromLTWH(
@@ -208,14 +270,27 @@ class Match3Game extends FlameGame {
           cellSize - 4,
         );
         final isSelected = selectedRow == r && selectedCol == c;
+        final hasJelly = viewModel.state.jellyTiles.contains('${r}_$c');
+
         canvas.drawRRect(
           RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
-          isSelected ? selectedCellPaint : cellBgPaint,
+          isSelected ? selectedCellPaint : (hasJelly ? jellyBgPaint : cellBgPaint),
         );
         canvas.drawRRect(
           RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
-          isSelected ? selectedBorderPaint : cellBorderPaint,
+          isSelected ? selectedBorderPaint : (hasJelly ? jellyBorderPaint : cellBorderPaint),
         );
+
+        if (hasJelly) {
+          final frostStarPaint = Paint()
+            ..color = Colors.white.withValues(alpha: 0.45)
+            ..style = PaintingStyle.fill;
+          canvas.drawCircle(
+            Offset(cellRect.left + 7, cellRect.top + 7),
+            2.5,
+            frostStarPaint,
+          );
+        }
       }
     }
   }
@@ -235,6 +310,7 @@ class FruitComponent extends PositionComponent {
   bool _isBouncing = false;
   bool _needsBounce = false;
   int _lastRow = -1;
+  double _hintPulseTimer = 0.0;
 
   FruitComponent({
     required this.id,
@@ -267,9 +343,18 @@ class FruitComponent extends PositionComponent {
       return;
     }
 
-    if (scaleVal < 1.0) {
-      scaleVal += dt * 6.0;
-      if (scaleVal > 1.0) scaleVal = 1.0;
+    final isHinted = game.viewModel.state.hintTileIds.contains(id);
+    if (isHinted) {
+      _hintPulseTimer += dt;
+      scaleVal = 1.0 + sin(_hintPulseTimer * 7.0) * 0.12;
+    } else {
+      _hintPulseTimer = 0.0;
+      if (scaleVal < 1.0) {
+        scaleVal += dt * 6.0;
+        if (scaleVal > 1.0) scaleVal = 1.0;
+      } else if (scaleVal > 1.0) {
+        scaleVal = max(1.0, scaleVal - dt * 4.0);
+      }
     }
 
     final targetX = game.startX + col * game.cellSize;
@@ -314,16 +399,26 @@ class FruitComponent extends PositionComponent {
   @override
   void render(Canvas canvas) {
     if (scaleVal <= 0.0 || size.x <= 0 || size.y <= 0) return;
+    final game = parent is Match3Game ? (parent as Match3Game) : null;
+    final isHinted = game?.viewModel.state.hintTileIds.contains(id) ?? false;
 
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
     canvas.scale(scaleVal);
 
+    if (isHinted) {
+      final hintGlowPaint = Paint()
+        ..color = const Color(0xFFFFD56B).withValues(alpha: 0.55 * opacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.5;
+      canvas.drawCircle(Offset.zero, size.x * 0.46, hintGlowPaint);
+    }
+
     if (type == TileType.wrapped) {
       final glowPaint = Paint()
-        ..color = const Color(0xFFFFCE31).withValues(alpha: 0.5 * opacity)
+        ..color = const Color(0xFFFFCE31).withValues(alpha: 0.55 * opacity)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset.zero, size.x * 0.42, glowPaint);
+      canvas.drawCircle(Offset.zero, size.x * 0.44, glowPaint);
     }
 
     final tp = TextPainter(
@@ -359,6 +454,92 @@ class FruitComponent extends PositionComponent {
     }
 
     canvas.restore();
+  }
+}
+
+class LaserBeamComponent extends PositionComponent {
+  final double widthVal;
+  final double heightVal;
+  final bool isHorizontal;
+  double opacity = 1.0;
+  double progress = 0.0;
+
+  LaserBeamComponent({
+    required double x,
+    required double y,
+    required double width,
+    required double height,
+    required this.isHorizontal,
+  })  : widthVal = width,
+        heightVal = height {
+    position = Vector2(x, y);
+    size = Vector2(width, height);
+    priority = 80;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    progress += dt * 3.5;
+    opacity = (1.0 - progress).clamp(0.0, 1.0);
+    if (progress >= 1.0) {
+      removeFromParent();
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (opacity <= 0.0) return;
+    final beamPaint = Paint()
+      ..color = const Color(0xFFFFD56B).withValues(alpha: opacity * 0.8)
+      ..style = PaintingStyle.fill;
+    final glowPaint = Paint()
+      ..color = Colors.white.withValues(alpha: opacity)
+      ..style = PaintingStyle.fill;
+
+    final rect = Rect.fromCenter(center: Offset.zero, width: widthVal, height: heightVal);
+    canvas.drawRect(rect, beamPaint);
+    final coreRect = Rect.fromCenter(
+      center: Offset.zero,
+      width: isHorizontal ? widthVal : widthVal * 0.4,
+      height: isHorizontal ? heightVal * 0.4 : heightVal,
+    );
+    canvas.drawRect(coreRect, glowPaint);
+  }
+}
+
+class ShockwaveComponent extends PositionComponent {
+  final double maxRadius;
+  double currentRadius = 0.0;
+  double opacity = 1.0;
+
+  ShockwaveComponent({
+    required double x,
+    required double y,
+    required this.maxRadius,
+  }) {
+    position = Vector2(x, y);
+    priority = 80;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    currentRadius += dt * maxRadius * 3.5;
+    opacity = (1.0 - (currentRadius / maxRadius)).clamp(0.0, 1.0);
+    if (currentRadius >= maxRadius) {
+      removeFromParent();
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (opacity <= 0.0) return;
+    final wavePaint = Paint()
+      ..color = const Color(0xFFFFCE31).withValues(alpha: opacity * 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5;
+    canvas.drawCircle(Offset.zero, currentRadius, wavePaint);
   }
 }
 
@@ -471,4 +652,5 @@ class ScorePopupComponent extends PositionComponent {
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
   }
 }
+
 
