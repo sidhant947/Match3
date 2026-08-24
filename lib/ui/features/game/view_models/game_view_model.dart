@@ -210,58 +210,59 @@ class GameViewModel extends ChangeNotifier {
 
   Future<bool> swapTiles(int r1, int c1, int r2, int c2) async {
     if (_isProcessing || _state.isGameOver) return false;
+    if (r1 == r2 && c1 == c2) return false;
     _isProcessing = true;
 
-    final tile1 = _state.getTile(r1, c1);
-    final tile2 = _state.getTile(r2, c2);
-    if (tile1 == null || tile2 == null) {
-      _isProcessing = false;
-      return false;
-    }
-
-    final swappedTiles = _state.tiles.map((tile) {
-      if (tile.id == tile1.id) {
-        return tile.copyWith(row: r2, col: c2);
-      } else if (tile.id == tile2.id) {
-        return tile.copyWith(row: r1, col: c1);
+    try {
+      final tile1 = _state.getTile(r1, c1);
+      final tile2 = _state.getTile(r2, c2);
+      if (tile1 == null || tile2 == null) {
+        return false;
       }
-      return tile;
-    }).toList();
 
-    _state = _state.copyWith(tiles: swappedTiles);
-    notifyListeners();
-
-    if (tile1.type == TileType.colorBomb || tile2.type == TileType.colorBomb) {
-      final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
-      _state = _state.copyWith(movesLeft: newMoves);
-      await _handleColorBombSwap(tile1, tile2);
-      _isProcessing = false;
-      return true;
-    }
-
-    final matches = _findMatches(swappedTiles);
-    if (matches.isEmpty) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      _state = _state.copyWith(tiles: _state.tiles.map((tile) {
+      final swappedTiles = _state.tiles.map((tile) {
         if (tile.id == tile1.id) {
-          return tile.copyWith(row: r1, col: c1);
-        } else if (tile.id == tile2.id) {
           return tile.copyWith(row: r2, col: c2);
+        } else if (tile.id == tile2.id) {
+          return tile.copyWith(row: r1, col: c1);
         }
         return tile;
-      }).toList());
-      _isProcessing = false;
+      }).toList();
+
+      _state = _state.copyWith(tiles: swappedTiles);
       notifyListeners();
-      return false;
+
+      if (tile1.type == TileType.colorBomb || tile2.type == TileType.colorBomb) {
+        final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
+        _state = _state.copyWith(movesLeft: newMoves);
+        await _handleColorBombSwap(tile1, tile2);
+        return true;
+      }
+
+      final matches = _findMatches(swappedTiles);
+      if (matches.isEmpty) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        _state = _state.copyWith(tiles: _state.tiles.map((tile) {
+          if (tile.id == tile1.id) {
+            return tile.copyWith(row: r1, col: c1);
+          } else if (tile.id == tile2.id) {
+            return tile.copyWith(row: r2, col: c2);
+          }
+          return tile;
+        }).toList());
+        notifyListeners();
+        return false;
+      }
+
+      final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
+      _state = _state.copyWith(movesLeft: newMoves, comboCount: 0);
+      notifyListeners();
+
+      await _processMatchesAndCascade();
+      return true;
+    } finally {
+      _isProcessing = false;
     }
-
-    final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
-    _state = _state.copyWith(movesLeft: newMoves, comboCount: 0);
-    notifyListeners();
-
-    await _processMatchesAndCascade();
-    _isProcessing = false;
-    return true;
   }
 
   Future<void> _handleColorBombSwap(TileModel tile1, TileModel tile2) async {

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -203,39 +204,45 @@ class _GameViewState extends ConsumerState<GameView> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 8),
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Center(
-                            child: AspectRatio(
-                              aspectRatio: 1.0,
-                              child: Listener(
-                                onPointerDown: (event) {
-                                  _pointerStartPos = event.localPosition;
-                                  _hasSwiped = false;
-                                },
-                                onPointerMove: (event) {
-                                  if (_pointerStartPos == null || _hasSwiped) return;
-                                  final delta = event.localPosition - _pointerStartPos!;
-                                  if (delta.distance > 20) {
-                                    _hasSwiped = true;
-                                    _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
-                                  }
-                                },
-                                onPointerUp: (event) {
-                                  if (!_hasSwiped && _pointerStartPos != null) {
-                                    final delta = event.localPosition - _pointerStartPos!;
-                                    if (delta.distance < 12) {
-                                      _game.handleTapAt(_pointerStartPos!);
-                                    }
-                                  }
-                                  _pointerStartPos = null;
-                                },
-                                child: GameWidget(game: _game),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Center(
+                                child: _ComboBannerWidget(comboCount: state.comboCount),
                               ),
                             ),
-                          ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                              child: AspectRatio(
+                                aspectRatio: 1.0,
+                                child: Listener(
+                                  onPointerDown: (event) {
+                                    _pointerStartPos = event.localPosition;
+                                    _hasSwiped = false;
+                                  },
+                                  onPointerMove: (event) {
+                                    if (_pointerStartPos == null || _hasSwiped) return;
+                                    final delta = event.localPosition - _pointerStartPos!;
+                                    if (delta.distance > 20) {
+                                      _hasSwiped = true;
+                                      _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
+                                    }
+                                  },
+                                  onPointerUp: (event) {
+                                    if (!_hasSwiped && _pointerStartPos != null) {
+                                      _game.handleTapAt(_pointerStartPos!);
+                                    }
+                                    _pointerStartPos = null;
+                                  },
+                                  child: GameWidget(game: _game),
+                                ),
+                              ),
+                            ),
+                            const Expanded(
+                              child: SizedBox(),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -514,3 +521,105 @@ class _GameViewState extends ConsumerState<GameView> {
     );
   }
 }
+
+class _ComboBannerWidget extends StatefulWidget {
+  final int comboCount;
+
+  const _ComboBannerWidget({required this.comboCount});
+
+  @override
+  State<_ComboBannerWidget> createState() => _ComboBannerWidgetState();
+}
+
+class _ComboBannerWidgetState extends State<_ComboBannerWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+  String _text = '';
+
+  static const _phrases = ['SWEET!', 'TASTY!', 'DELICIOUS!', 'DIVINE!', 'UNBELIEVABLE!'];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.5, end: 1.1).chain(CurveTween(curve: Curves.easeOutBack)), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 30),
+    ]).animate(_controller);
+
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 25),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 45),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 30),
+    ]).animate(_controller);
+
+    if (widget.comboCount > 1) {
+      _trigger(widget.comboCount);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ComboBannerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.comboCount > oldWidget.comboCount && widget.comboCount > 1) {
+      _trigger(widget.comboCount);
+    }
+  }
+
+  void _trigger(int combo) {
+    _text = _phrases[min(combo - 2, _phrases.length - 1)];
+    _controller.forward(from: 0.0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        if (_controller.isDismissed || _opacityAnimation.value <= 0.0) {
+          return const SizedBox.shrink();
+        }
+        return Opacity(
+          opacity: _opacityAnimation.value,
+          child: Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Text(
+              _text,
+              style: const TextStyle(
+                fontFamily: 'BebasNeue',
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFFFCE31),
+                letterSpacing: 3.0,
+                shadows: [
+                  Shadow(
+                    blurRadius: 10,
+                    color: Colors.black87,
+                    offset: Offset(0, 3),
+                  ),
+                  Shadow(
+                    blurRadius: 20,
+                    color: Color(0x66FFCE31),
+                    offset: Offset(0, 0),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+

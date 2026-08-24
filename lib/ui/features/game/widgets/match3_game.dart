@@ -15,7 +15,6 @@ class Match3Game extends FlameGame {
   double startY = 0;
   int? selectedRow;
   int? selectedCol;
-  int _lastProcessedCombo = 0;
 
   Match3Game({required this.viewModel});
 
@@ -75,6 +74,7 @@ class Match3Game extends FlameGame {
         existing.row = tile.row;
         existing.col = tile.col;
         existing.type = tile.type;
+        existing.emoji = tile.emoji;
       } else {
         final spawnY = startY - cellSize * 2;
         final spawnX = startX + tile.col * cellSize;
@@ -92,12 +92,6 @@ class Match3Game extends FlameGame {
         add(comp);
       }
     }
-
-    final currentCombo = viewModel.state.comboCount;
-    if (currentCombo > _lastProcessedCombo && currentCombo > 1) {
-      _spawnComboBanner(currentCombo);
-    }
-    _lastProcessedCombo = currentCombo;
   }
 
   void _spawnMatchParticles(double x, double y, String emoji) {
@@ -126,18 +120,6 @@ class Match3Game extends FlameGame {
     add(ScorePopupComponent(x: x, y: y, size: cellSize));
   }
 
-  void _spawnComboBanner(int combo) {
-    if (cellSize <= 0) return;
-    final phrases = ['SWEET!', 'TASTY!', 'DELICIOUS!', 'DIVINE!', 'UNBELIEVABLE!'];
-    final phrase = phrases[min(combo - 2, phrases.length - 1)];
-    add(ComboBannerComponent(
-      text: phrase,
-      x: startX + (cellSize * viewModel.state.cols / 2),
-      y: startY + (cellSize * viewModel.state.rows / 2),
-      size: cellSize * viewModel.state.cols,
-    ));
-  }
-
   void handleTapAt(Offset localPosition) {
     if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
 
@@ -148,6 +130,9 @@ class Match3Game extends FlameGame {
       if (selectedRow == null || selectedCol == null) {
         selectedRow = row;
         selectedCol = col;
+      } else if (selectedRow == row && selectedCol == col) {
+        selectedRow = null;
+        selectedCol = null;
       } else {
         final diffRow = (row - selectedRow!).abs();
         final diffCol = (col - selectedCol!).abs();
@@ -168,6 +153,9 @@ class Match3Game extends FlameGame {
 
   void handleSwipeAt(Offset startPos, Offset endPos) {
     if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+
+    selectedRow = null;
+    selectedCol = null;
 
     final col = ((startPos.dx - startX) / cellSize).floor();
     final row = ((startPos.dy - startY) / cellSize).floor();
@@ -203,6 +191,13 @@ class Match3Game extends FlameGame {
       ..color = Colors.white.withValues(alpha: 0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
+    final selectedCellPaint = Paint()
+      ..color = const Color(0xFFFFCE31).withValues(alpha: 0.35)
+      ..style = PaintingStyle.fill;
+    final selectedBorderPaint = Paint()
+      ..color = const Color(0xFFFFCE31)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
 
     for (int r = 0; r < viewModel.state.rows; r++) {
       for (int c = 0; c < viewModel.state.cols; c++) {
@@ -212,13 +207,14 @@ class Match3Game extends FlameGame {
           cellSize - 4,
           cellSize - 4,
         );
+        final isSelected = selectedRow == r && selectedCol == c;
         canvas.drawRRect(
           RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
-          cellBgPaint,
+          isSelected ? selectedCellPaint : cellBgPaint,
         );
         canvas.drawRRect(
           RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
-          cellBorderPaint,
+          isSelected ? selectedBorderPaint : cellBorderPaint,
         );
       }
     }
@@ -227,7 +223,7 @@ class Match3Game extends FlameGame {
 
 class FruitComponent extends PositionComponent {
   final String id;
-  final String emoji;
+  String emoji;
   int row;
   int col;
   TileType type;
@@ -237,7 +233,8 @@ class FruitComponent extends PositionComponent {
 
   double _bounceTimer = 0.0;
   bool _isBouncing = false;
-  double _lastTargetY = 0.0;
+  bool _needsBounce = false;
+  int _lastRow = -1;
 
   FruitComponent({
     required this.id,
@@ -251,7 +248,6 @@ class FruitComponent extends PositionComponent {
   }) {
     position = Vector2(initialX, initialY);
     size = Vector2(sizeVal, sizeVal);
-    _lastTargetY = initialY;
   }
 
   @override
@@ -279,14 +275,21 @@ class FruitComponent extends PositionComponent {
     final targetX = game.startX + col * game.cellSize;
     final targetY = game.startY + row * game.cellSize;
 
-    if (targetY != _lastTargetY) {
-      _lastTargetY = targetY;
+    if (row != _lastRow) {
+      if (row > _lastRow) {
+        _needsBounce = true;
+      } else {
+        _needsBounce = false;
+      }
+      _lastRow = row;
       _isBouncing = false;
+      _bounceTimer = 0.0;
     }
 
     final dist = position.distanceTo(Vector2(targetX, targetY));
-    if (dist < 1.5 && !_isBouncing && position.y < targetY) {
+    if (_needsBounce && (dist < 1.5 || position.y >= targetY)) {
       _isBouncing = true;
+      _needsBounce = false;
       _bounceTimer = 0.0;
     }
 
@@ -294,12 +297,17 @@ class FruitComponent extends PositionComponent {
       _bounceTimer += dt;
       final bounceOffset = sin(_bounceTimer * 18.0) * 12.0 * exp(-_bounceTimer * 6.0);
       position = Vector2(targetX, targetY + bounceOffset);
-      if (_bounceTimer > 0.8) {
+      if (_bounceTimer >= 0.8) {
         _isBouncing = false;
+        _bounceTimer = 0.0;
         position = Vector2(targetX, targetY);
       }
     } else {
-      position.lerp(Vector2(targetX, targetY), 0.22);
+      if (dist < 0.5) {
+        position = Vector2(targetX, targetY);
+      } else {
+        position.lerp(Vector2(targetX, targetY), 0.22);
+      }
     }
   }
 
@@ -464,71 +472,3 @@ class ScorePopupComponent extends PositionComponent {
   }
 }
 
-class ComboBannerComponent extends PositionComponent {
-  final String text;
-  double opacity = 0.0;
-  double scaleVal = 0.5;
-  double _timer = 0.0;
-
-  ComboBannerComponent({
-    required this.text,
-    required double x,
-    required double y,
-    required double size,
-  }) {
-    position = Vector2(x, y);
-    this.size = Vector2(size, size);
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    _timer += dt;
-
-    if (_timer < 0.3) {
-      opacity = (_timer / 0.3).clamp(0.0, 1.0);
-      scaleVal = 0.5 + (_timer / 0.3) * 0.5;
-    } else if (_timer < 1.0) {
-      opacity = 1.0;
-      scaleVal = 1.0;
-    } else if (_timer < 1.3) {
-      final diff = _timer - 1.0;
-      opacity = (1.0 - (diff / 0.3)).clamp(0.0, 1.0);
-      scaleVal = 1.0 + (diff / 0.3) * 0.2;
-    } else {
-      removeFromParent();
-    }
-  }
-
-  @override
-  void render(Canvas canvas) {
-    if (opacity <= 0 || size.x <= 0) return;
-    final tp = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-          fontFamily: 'BebasNeue',
-          fontSize: max(1.0, size.x * 0.09),
-          fontWeight: FontWeight.w900,
-          color: const Color(0xFFFFCE31).withValues(alpha: opacity.clamp(0.0, 1.0)),
-          letterSpacing: 2.0,
-          shadows: const [
-            Shadow(
-              blurRadius: 8,
-              color: Colors.black87,
-              offset: Offset(2, 2),
-            )
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    tp.layout();
-
-    canvas.save();
-    canvas.translate(0, 0);
-    canvas.scale(scaleVal);
-    tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
-    canvas.restore();
-  }
-}
