@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:match3/data/repositories/progress_repository.dart';
 import 'package:match3/domain/models/game_state_model.dart';
+import 'package:match3/domain/models/level_generator.dart';
 import 'package:match3/domain/models/level_goal.dart';
 import 'package:match3/domain/models/tile_model.dart';
 
@@ -10,14 +11,7 @@ class GameViewModel extends ChangeNotifier {
   final ProgressRepository progressRepository;
   final Random _random = Random();
 
-  static const List<String> _allFruits = ['🍎', '🍋', '🍇', '🍉', '🍍', '🍓', '🍊', '🍒'];
-
-  int _targetScore = 1000;
-  int _moves = 25;
-  int _fruitVarietyCount = 5;
-  int _star1Score = 500;
-  int _star2Score = 1000;
-  int _star3Score = 1500;
+  late LevelConfig _levelConfig;
   bool _isZenMode = false;
   late LevelGoal _currentGoal;
   Timer? _hintTimer;
@@ -49,133 +43,39 @@ class GameViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  LevelGoal _generateLevelGoal(int level, bool isZenMode) {
-    if (isZenMode) {
-      return const LevelGoal(
-        type: LevelGoalType.score,
-        title: 'ENDLESS RELAXATION',
-        description: 'Match and relax without move limits',
-        targetValue: 999999,
-      );
-    }
-
-    final cycle = (level - 1) % 5;
-    final available = _getAvailableFruits((4 + (level ~/ 10)).clamp(4, _allFruits.length));
-    final fruit = available[(level - 1) % available.length];
-
-    switch (cycle) {
-      case 0:
-        final neededFruit = min(12 + (level * 2), 45);
-        return LevelGoal(
-          type: LevelGoalType.targetFruit,
-          title: 'HARVEST QUEST',
-          description: 'Collect $neededFruit $fruit',
-          targetValue: neededFruit,
-          targetFruitEmoji: fruit,
-        );
-      case 1:
-        final specialsNeeded = min(2 + (level ~/ 4), 8);
-        return LevelGoal(
-          type: LevelGoalType.createSpecials,
-          title: 'SPECIAL FUSION',
-          description: 'Create $specialsNeeded striped/wrapped fruits',
-          targetValue: specialsNeeded,
-        );
-      case 2:
-        final combosNeeded = min(2 + (level ~/ 5), 7);
-        return LevelGoal(
-          type: LevelGoalType.comboMaster,
-          title: 'COMBO FEVER',
-          description: 'Trigger $combosNeeded combo cascades',
-          targetValue: combosNeeded,
-        );
-      case 3:
-        final jellyCount = min(12 + (level ~/ 2) * 2, 28);
-        return LevelGoal(
-          type: LevelGoalType.clearJelly,
-          title: 'FROSTING CRUSH',
-          description: 'Clear all $jellyCount frosting tiles',
-          targetValue: jellyCount,
-        );
-      case 4:
-      default:
-        final pts = 1200 + (level - 1) * 450;
-        return LevelGoal(
-          type: LevelGoalType.score,
-          title: 'HIGH ROLLER',
-          description: 'Reach $pts points',
-          targetValue: pts,
-        );
-    }
-  }
-
-  Set<String> _generateJellyTiles(LevelGoal goal, int rows, int cols) {
-    if (goal.type != LevelGoalType.clearJelly) return const {};
-    final jelly = <String>{};
-    final count = goal.targetValue;
-    final centerR = rows / 2;
-    final centerC = cols / 2;
-
-    final coords = <Point<int>>[];
-    for (int r = 0; r < rows; r++) {
-      for (int c = 0; c < cols; c++) {
-        coords.add(Point(r, c));
-      }
-    }
-    coords.sort((a, b) {
-      final distA = pow(a.x - centerR + 0.5, 2) + pow(a.y - centerC + 0.5, 2);
-      final distB = pow(b.x - centerR + 0.5, 2) + pow(b.y - centerC + 0.5, 2);
-      return distA.compareTo(distB);
-    });
-
-    for (int i = 0; i < min(count, coords.length); i++) {
-      jelly.add('${coords[i].x}_${coords[i].y}');
-    }
-    return jelly;
-  }
-
   Future<void> initGame({int level = 1, bool isZenMode = false}) async {
     _hintTimer?.cancel();
     _isZenMode = isZenMode;
-    _currentGoal = _generateLevelGoal(level, isZenMode);
-
-    _targetScore = _currentGoal.type == LevelGoalType.score
-        ? _currentGoal.targetValue
-        : (800 + (level - 1) * 300);
-
-    _moves = isZenMode ? 999 : max(14, 28 - (level ~/ 6));
-    _fruitVarietyCount = (4 + (level ~/ 10)).clamp(4, _allFruits.length);
-    _star1Score = (_targetScore * 0.6).round();
-    _star2Score = _targetScore;
-    _star3Score = (_targetScore * 1.5).round();
+    _levelConfig = LevelGenerator.generate(level, isZenMode: isZenMode, rows: 8, cols: 8);
+    _currentGoal = _levelConfig.goal;
 
     final userProgress = await progressRepository.getProgress();
     final effectiveHighScore = userProgress.levelStars[level.toString()] != null
         ? userProgress.levelStars[level.toString()]! * 1000
         : 0;
 
-    final initialTiles = _generateInitialBoard(8, 8, _fruitVarietyCount);
-    final initialJelly = _generateJellyTiles(_currentGoal, 8, 8);
+    final initialTiles = _generateInitialBoard(8, 8, _levelConfig.fruitVarietyCount);
 
     _state = GameStateModel(
       tiles: initialTiles,
       score: 0,
       highScore: effectiveHighScore,
-      movesLeft: _moves,
-      targetScore: _targetScore,
+      movesLeft: _levelConfig.moves,
+      targetScore: _levelConfig.targetScore,
       goal: _currentGoal,
       isGameOver: false,
       rows: 8,
       cols: 8,
       comboCount: 0,
       levelNumber: level,
-      star1Score: _star1Score,
-      star2Score: _star2Score,
-      star3Score: _star3Score,
+      star1Score: _levelConfig.star1Score,
+      star2Score: _levelConfig.star2Score,
+      star3Score: _levelConfig.star3Score,
       starsEarned: 0,
-      jellyTiles: initialJelly,
+      jellyTiles: _levelConfig.jellyTiles,
       hintTileIds: const {},
       isShuffling: false,
+      levelConfig: _levelConfig,
     );
     _isProcessing = false;
     notifyListeners();
@@ -183,15 +83,15 @@ class GameViewModel extends ChangeNotifier {
   }
 
   int calculateStars(int score) {
-    if (score >= _star3Score) return 3;
-    if (score >= _star2Score) return 2;
-    if (score >= _star1Score) return 1;
+    if (score >= _levelConfig.star3Score) return 3;
+    if (score >= _levelConfig.star2Score) return 2;
+    if (score >= _levelConfig.star1Score) return 1;
     return 1;
   }
 
   List<String> _getAvailableFruits(int count) {
-    final clampedCount = count.clamp(4, _allFruits.length);
-    return _allFruits.sublist(0, clampedCount);
+    final clampedCount = count.clamp(4, LevelGenerator.allFruits.length);
+    return LevelGenerator.allFruits.sublist(0, clampedCount);
   }
 
   List<TileModel> _generateInitialBoard(int rows, int cols, int fruitCount) {
@@ -588,7 +488,7 @@ class GameViewModel extends ChangeNotifier {
       }
     }
 
-    final freshTiles = _generateInitialBoard(_state.rows, _state.cols, _fruitVarietyCount);
+    final freshTiles = _generateInitialBoard(_state.rows, _state.cols, _levelConfig.fruitVarietyCount);
     _state = _state.copyWith(tiles: freshTiles, isShuffling: false);
     notifyListeners();
   }
@@ -710,7 +610,7 @@ class GameViewModel extends ChangeNotifier {
 
   List<TileModel> _cascadeBoard(List<TileModel> remainingTiles) {
     final newTiles = <TileModel>[];
-    final availableFruits = _getAvailableFruits(_fruitVarietyCount);
+    final availableFruits = _getAvailableFruits(_levelConfig.fruitVarietyCount);
 
     for (int c = 0; c < _state.cols; c++) {
       final colTiles = remainingTiles.where((t) => t.col == c).toList()

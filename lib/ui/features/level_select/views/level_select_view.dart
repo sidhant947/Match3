@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:match3/domain/models/level_generator.dart';
 import 'package:match3/ui/features/game/views/game_view.dart';
 import 'package:match3/ui/providers.dart';
 
@@ -14,10 +15,21 @@ class LevelSelectView extends ConsumerStatefulWidget {
 }
 
 class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
+  late ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(homeViewModelProvider.notifier).loadProgress());
+    _scrollController = ScrollController();
+    Future.microtask(() {
+      ref.read(homeViewModelProvider.notifier).loadProgress();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Widget _backButton() {
@@ -55,7 +67,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
     final highestCompleted = state.progress?.highestLevelCompleted ?? 0;
     final currentLevel = state.progress?.currentLevel ?? 1;
 
-    final int totalLevelsToShow = math.max(100, (currentLevel + 50).clamp(100, 1000));
+    final int totalLevelsToShow = math.max(100, math.min(5000, currentLevel + 50));
 
     return Scaffold(
       body: Container(
@@ -79,27 +91,38 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
                 child: Row(
                   children: [
                     _backButton(),
-                    const Expanded(
+                    Expanded(
                       child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'LEVELS',
-                            style: TextStyle(
-                              fontFamily: 'BebasNeue',
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 1.5,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 2),
-                                  blurRadius: 4.0,
-                                  color: Colors.black45,
-                                ),
-                              ],
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'LEVELS',
+                              style: TextStyle(
+                                fontFamily: 'BebasNeue',
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 1.5,
+                                shadows: [
+                                  Shadow(
+                                    offset: Offset(0, 2),
+                                    blurRadius: 4.0,
+                                    color: Colors.black45,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                            Text(
+                              'CHAPTER ${((currentLevel - 1) ~/ LevelGenerator.chapterSize) + 1} • LEVEL $currentLevel',
+                              style: const TextStyle(
+                                fontFamily: 'BebasNeue',
+                                fontSize: 13,
+                                color: Color(0xFFFFCE31),
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -109,6 +132,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               ),
               Expanded(
                 child: GridView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(24),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
@@ -147,6 +171,9 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
     required bool isCurrent,
     required bool isLocked,
   }) {
+    final isBoss = levelNumber % LevelGenerator.chapterSize == 0;
+    final isMilestone = levelNumber % 100 == 0;
+
     List<Color> gradientColors;
     Color borderColor;
     Widget content;
@@ -154,8 +181,17 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
 
     if (isCompleted) {
       final stars = ref.read(homeViewModelProvider).progress?.levelStars[levelNumber.toString()] ?? 0;
-      gradientColors = [const Color(0xFFFFB073), const Color(0xFFFF8523)];
-      borderColor = const Color(0xFFFFCAB3);
+      if (isMilestone) {
+        gradientColors = [const Color(0xFFFFD700), const Color(0xFFFF8C00)];
+        borderColor = const Color(0xFFFFF8B0);
+      } else if (isBoss) {
+        gradientColors = [const Color(0xFFFF7043), const Color(0xFFD84315)];
+        borderColor = const Color(0xFFFFAB91);
+      } else {
+        gradientColors = [const Color(0xFFFFB073), const Color(0xFFFF8523)];
+        borderColor = const Color(0xFFFFCAB3);
+      }
+
       content = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -165,7 +201,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               '$levelNumber',
               style: const TextStyle(
                 fontFamily: 'BebasNeue',
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
                 shadows: [
@@ -185,7 +221,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               final active = starIdx < stars;
               return Icon(
                 active ? Icons.star_rounded : Icons.star_border_rounded,
-                size: 14,
+                size: 13,
                 color: active ? Colors.white : Colors.white30,
               );
             }),
@@ -193,34 +229,54 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
         ],
       );
     } else if (isCurrent) {
-      gradientColors = [const Color(0xFFFFDF6D), const Color(0xFFFFCE31)];
-      borderColor = const Color(0xFFFFF2A3);
-      content = FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          '$levelNumber',
-          style: const TextStyle(
-            fontFamily: 'BebasNeue',
-            fontSize: 28,
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            shadows: [
-              Shadow(
-                offset: Offset(0, 2),
-                blurRadius: 2.0,
-                color: Colors.black54,
+      if (isMilestone) {
+        gradientColors = [const Color(0xFFFFE082), const Color(0xFFFFB300)];
+        borderColor = const Color(0xFFFFF9C4);
+      } else if (isBoss) {
+        gradientColors = [const Color(0xFFFF8A65), const Color(0xFFE64A19)];
+        borderColor = const Color(0xFFFFCCBC);
+      } else {
+        gradientColors = [const Color(0xFFFFDF6D), const Color(0xFFFFCE31)];
+        borderColor = const Color(0xFFFFF2A3);
+      }
+
+      content = Stack(
+        alignment: Alignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '$levelNumber',
+              style: const TextStyle(
+                fontFamily: 'BebasNeue',
+                fontSize: 26,
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                shadows: [
+                  Shadow(
+                    offset: Offset(0, 2),
+                    blurRadius: 2.0,
+                    color: Colors.black54,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          if (isBoss)
+            const Positioned(
+              top: 2,
+              right: 2,
+              child: Text('👑', style: TextStyle(fontSize: 10)),
+            ),
+        ],
       );
     } else {
       gradientColors = [const Color(0xFF242424), const Color(0xFF1A1A1A)];
-      borderColor = const Color(0xFF333333);
-      content = const Icon(
-        Icons.lock_outline_rounded,
+      borderColor = isBoss ? const Color(0xFF4A3525) : const Color(0xFF333333);
+      content = Icon(
+        isBoss ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded,
         size: 20,
-        color: Color(0xFF777777),
+        color: isBoss ? const Color(0xFFAA7733) : const Color(0xFF777777),
       );
     }
 
@@ -247,7 +303,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
-            width: 2.0,
+            width: isBoss ? 2.5 : 2.0,
           ),
           boxShadow: [
             BoxShadow(

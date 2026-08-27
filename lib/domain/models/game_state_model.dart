@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:match3/domain/models/level_generator.dart';
 import 'package:match3/domain/models/level_goal.dart';
 import 'package:match3/domain/models/tile_model.dart';
 
@@ -22,6 +23,7 @@ class GameStateModel {
   final Set<String> jellyTiles;
   final Set<String> hintTileIds;
   final bool isShuffling;
+  final LevelConfig? levelConfig;
 
   const GameStateModel({
     required this.tiles,
@@ -47,6 +49,7 @@ class GameStateModel {
     this.jellyTiles = const {},
     this.hintTileIds = const {},
     this.isShuffling = false,
+    this.levelConfig,
   });
 
   TileModel? getTile(int row, int col) {
@@ -76,6 +79,7 @@ class GameStateModel {
     Set<String>? jellyTiles,
     Set<String>? hintTileIds,
     bool? isShuffling,
+    LevelConfig? levelConfig,
   }) {
     return GameStateModel(
       tiles: tiles ?? this.tiles,
@@ -96,6 +100,7 @@ class GameStateModel {
       jellyTiles: jellyTiles ?? this.jellyTiles,
       hintTileIds: hintTileIds ?? this.hintTileIds,
       isShuffling: isShuffling ?? this.isShuffling,
+      levelConfig: levelConfig ?? this.levelConfig,
     );
   }
 }
