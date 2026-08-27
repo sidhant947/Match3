@@ -23,6 +23,7 @@ class GameStateModel {
   final Set<String> jellyTiles;
   final Set<String> hintTileIds;
   final bool isShuffling;
+  final bool isSugarCrush;
   final LevelConfig? levelConfig;
 
   const GameStateModel({
@@ -49,6 +50,7 @@ class GameStateModel {
     this.jellyTiles = const {},
     this.hintTileIds = const {},
     this.isShuffling = false,
+    this.isSugarCrush = false,
     this.levelConfig,
   });
 
@@ -79,6 +81,7 @@ class GameStateModel {
     Set<String>? jellyTiles,
     Set<String>? hintTileIds,
     bool? isShuffling,
+    bool? isSugarCrush,
     LevelConfig? levelConfig,
   }) {
     return GameStateModel(
@@ -100,6 +103,7 @@ class GameStateModel {
       jellyTiles: jellyTiles ?? this.jellyTiles,
       hintTileIds: hintTileIds ?? this.hintTileIds,
       isShuffling: isShuffling ?? this.isShuffling,
+      isSugarCrush: isSugarCrush ?? this.isSugarCrush,
       levelConfig: levelConfig ?? this.levelConfig,
     );
   }

@@ -54,7 +54,7 @@ class GameViewModel extends ChangeNotifier {
         ? userProgress.levelStars[level.toString()]! * 1000
         : 0;
 
-    final initialTiles = _generateInitialBoard(8, 8, _levelConfig.fruitVarietyCount);
+    final initialTiles = _generateInitialBoard(8, 8, _levelConfig.fruitVarietyCount, _levelConfig.frozenTiles, _levelConfig.crateTiles);
 
     _state = GameStateModel(
       tiles: initialTiles,
@@ -94,11 +94,24 @@ class GameViewModel extends ChangeNotifier {
     return LevelGenerator.allFruits.sublist(0, clampedCount);
   }
 
-  List<TileModel> _generateInitialBoard(int rows, int cols, int fruitCount) {
+  List<TileModel> _generateInitialBoard(int rows, int cols, int fruitCount, [Set<String> frozen = const {}, Set<String> crates = const {}]) {
     final availableFruits = _getAvailableFruits(fruitCount);
     final tiles = <TileModel>[];
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < cols; c++) {
+        final key = '${r}_$c';
+        if (crates.contains(key)) {
+          tiles.add(TileModel(
+            id: '${DateTime.now().microsecondsSinceEpoch}_${r}_${c}_${_random.nextInt(1000)}',
+            row: r,
+            col: c,
+            emoji: '📦',
+            type: TileType.crate,
+            crateHealth: 2,
+          ));
+          continue;
+        }
+
         final allowedFruits = List<String>.from(availableFruits);
         if (c >= 2) {
           final left1 = tiles.firstWhere((t) => t.row == r && t.col == c - 1);
@@ -120,6 +133,7 @@ class GameViewModel extends ChangeNotifier {
           row: r,
           col: c,
           emoji: emoji,
+          isFrozen: frozen.contains(key),
         ));
       }
     }
@@ -140,8 +154,8 @@ class GameViewModel extends ChangeNotifier {
         currentVal = _state.score + scoreAdded;
         break;
       case LevelGoalType.targetFruit:
-        final matchingFruitCount = clearedTiles.where((t) => t.emoji == _currentGoal.targetFruitEmoji).length;
-        currentVal += matchingFruitCount;
+        final matching = clearedTiles.where((t) => t.emoji == _currentGoal.targetFruitEmoji).length;
+        currentVal += matching;
         break;
       case LevelGoalType.createSpecials:
         currentVal += specialsCreatedCount;
@@ -186,17 +200,18 @@ class GameViewModel extends ChangeNotifier {
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < cols; c++) {
         final t1 = tiles.firstWhere((t) => t.row == r && t.col == c);
+        if (!t1.canSwap) continue;
 
         if (c + 1 < cols) {
           final t2 = tiles.firstWhere((t) => t.row == r && t.col == c + 1);
-          if (_isValidMove(t1, t2, tiles, rows, cols)) {
+          if (t2.canSwap && _isValidMove(t1, t2, tiles, rows, cols)) {
             return [t1, t2];
           }
         }
 
         if (r + 1 < rows) {
           final t2 = tiles.firstWhere((t) => t.row == r + 1 && t.col == c);
-          if (_isValidMove(t1, t2, tiles, rows, cols)) {
+          if (t2.canSwap && _isValidMove(t1, t2, tiles, rows, cols)) {
             return [t1, t2];
           }
         }
@@ -206,6 +221,7 @@ class GameViewModel extends ChangeNotifier {
   }
 
   bool _isValidMove(TileModel t1, TileModel t2, List<TileModel> tiles, int rows, int cols) {
+    if (!t1.canSwap || !t2.canSwap) return false;
     if (t1.type == TileType.colorBomb || t2.type == TileType.colorBomb) return true;
     if (t1.type != TileType.normal && t2.type != TileType.normal) return true;
 
@@ -403,6 +419,32 @@ class GameViewModel extends ChangeNotifier {
         }
       }
 
+      // Break adjacent ice and damage adjacent crates
+      final postDamageTiles = updatedTiles.map((tile) {
+        if (finalExplodedIds.contains(tile.id)) return tile;
+        final isAdjacent = destroyedTiles.any((d) =>
+            (d.row == tile.row && (d.col - tile.col).abs() == 1) ||
+            (d.col == tile.col && (d.row - tile.row).abs() == 1));
+
+        if (isAdjacent) {
+          if (tile.isFrozen) {
+            return tile.copyWith(isFrozen: false);
+          } else if (tile.type == TileType.crate) {
+            final nextHp = tile.crateHealth - 1;
+            if (nextHp <= 0) {
+              return tile.copyWith(
+                type: TileType.normal,
+                crateHealth: 0,
+                emoji: LevelGenerator.allFruits[_random.nextInt(4)],
+              );
+            } else {
+              return tile.copyWith(crateHealth: nextHp);
+            }
+          }
+        }
+        return tile;
+      }).toList();
+
       _updateGoalProgress(
         scoreAdded: scoreIncrease,
         clearedTiles: destroyedTiles,
@@ -412,7 +454,7 @@ class GameViewModel extends ChangeNotifier {
       );
 
       final stars = calculateStars(newScore);
-      final remaining = updatedTiles.where((t) => !finalExplodedIds.contains(t.id)).toList();
+      final remaining = postDamageTiles.where((t) => !finalExplodedIds.contains(t.id)).toList();
 
       _state = _state.copyWith(
         tiles: remaining,
@@ -433,7 +475,9 @@ class GameViewModel extends ChangeNotifier {
     }
 
     final isGoalCompleted = _currentGoal.isCompleted;
-    if (!_isZenMode && (_state.movesLeft <= 0 || isGoalCompleted)) {
+    if (!_isZenMode && isGoalCompleted && _state.movesLeft > 0) {
+      await _triggerSugarCrush();
+    } else if (!_isZenMode && (_state.movesLeft <= 0 || isGoalCompleted)) {
       final finalStars = calculateStars(_state.score);
       _state = _state.copyWith(
         isGameOver: true,
@@ -449,6 +493,98 @@ class GameViewModel extends ChangeNotifier {
     } else {
       await _checkAndPerformShuffleIfNeeded();
     }
+  }
+
+  Future<void> _triggerSugarCrush() async {
+    _state = _state.copyWith(isSugarCrush: true);
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    final createdSpecialIds = <String>[];
+
+    // Phase 1: Convert remaining moves into special candies one by one
+    while (_state.movesLeft > 0) {
+      final candidates = _state.tiles.where((t) => t.type == TileType.normal && !t.isFrozen && !createdSpecialIds.contains(t.id)).toList();
+      if (candidates.isEmpty) break;
+
+      final target = candidates[_random.nextInt(candidates.length)];
+      final rand = _random.nextInt(3);
+      final specialType = rand == 0
+          ? TileType.stripedHorizontal
+          : (rand == 1 ? TileType.stripedVertical : TileType.wrapped);
+
+      createdSpecialIds.add(target.id);
+
+      final transformedTiles = _state.tiles.map((t) {
+        if (t.id == target.id) {
+          return t.copyWith(type: specialType);
+        }
+        return t;
+      }).toList();
+
+      final newScore = _state.score + 500;
+      final newStars = calculateStars(newScore);
+
+      _state = _state.copyWith(
+        movesLeft: _state.movesLeft - 1,
+        tiles: transformedTiles,
+        score: newScore,
+        starsEarned: newStars,
+      );
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 280));
+    }
+
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    // Phase 2: Detonate specials sequentially for full cinematic effect
+    for (final specialId in createdSpecialIds) {
+      final tile = _state.tiles.where((t) => t.id == specialId).firstOrNull;
+      if (tile == null || tile.type == TileType.normal) continue;
+
+      final exploded = _resolveExplosions([tile], _state.tiles);
+      final explodedIds = exploded.map((e) => e.id).toSet();
+
+      final destroyedTiles = _state.tiles.where((t) => explodedIds.contains(t.id)).toList();
+      final remainingJelly = Set<String>.from(_state.jellyTiles);
+      for (final t in destroyedTiles) {
+        remainingJelly.remove('${t.row}_${t.col}');
+      }
+
+      final scoreGain = explodedIds.length * 80;
+      final updatedScore = _state.score + scoreGain;
+      final remaining = _state.tiles.where((t) => !explodedIds.contains(t.id)).toList();
+
+      _state = _state.copyWith(
+        tiles: remaining,
+        score: updatedScore,
+        starsEarned: calculateStars(updatedScore),
+        jellyTiles: remainingJelly,
+        comboCount: _state.comboCount + 1,
+      );
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 320));
+
+      final cascadedTiles = _cascadeBoard(_state.tiles);
+      _state = _state.copyWith(tiles: cascadedTiles);
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 380));
+    }
+
+    // Phase 3: Cascade any remaining matches
+    await _processMatchesAndCascade();
+
+    final finalStars = calculateStars(_state.score);
+    _state = _state.copyWith(
+      isGameOver: true,
+      isSugarCrush: false,
+      starsEarned: finalStars,
+    );
+    await progressRepository.completeLevel(
+      _state.levelNumber,
+      finalStars,
+    );
+    notifyListeners();
   }
 
   Future<void> _checkAndPerformShuffleIfNeeded() async {

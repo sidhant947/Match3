@@ -6,6 +6,7 @@ enum TileType {
   stripedVertical,
   wrapped,
   colorBomb,
+  crate,
 }
 
 @immutable
@@ -15,6 +16,8 @@ class TileModel {
   final int col;
   final String emoji;
   final TileType type;
+  final bool isFrozen;
+  final int crateHealth;
 
   const TileModel({
     required this.id,
@@ -22,7 +25,12 @@ class TileModel {
     required this.col,
     required this.emoji,
     this.type = TileType.normal,
+    this.isFrozen = false,
+    this.crateHealth = 0,
   });
+
+  bool get isObstacle => type == TileType.crate;
+  bool get canSwap => !isFrozen && !isObstacle;
 
   TileModel copyWith({
     String? id,
@@ -30,6 +38,8 @@ class TileModel {
     int? col,
     String? emoji,
     TileType? type,
+    bool? isFrozen,
+    int? crateHealth,
   }) {
     return TileModel(
       id: id ?? this.id,
@@ -37,6 +47,8 @@ class TileModel {
       col: col ?? this.col,
       emoji: emoji ?? this.emoji,
       type: type ?? this.type,
+      isFrozen: isFrozen ?? this.isFrozen,
+      crateHealth: crateHealth ?? this.crateHealth,
     );
   }
 

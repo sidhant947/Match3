@@ -44,6 +44,8 @@ class LevelConfig {
   final int star3Score;
   final int fruitVarietyCount;
   final Set<String> jellyTiles;
+  final Set<String> frozenTiles;
+  final Set<String> crateTiles;
   final MilestoneReward reward;
 
   const LevelConfig({
@@ -59,6 +61,8 @@ class LevelConfig {
     required this.star3Score,
     required this.fruitVarietyCount,
     required this.jellyTiles,
+    this.frozenTiles = const {},
+    this.crateTiles = const {},
     required this.reward,
   });
 }
@@ -88,6 +92,8 @@ class LevelGenerator {
         star3Score: 6000,
         fruitVarietyCount: 5,
         jellyTiles: const {},
+        frozenTiles: const {},
+        crateTiles: const {},
         reward: const MilestoneReward(
           type: MilestoneRewardType.none,
           title: 'Zen Mastery',
@@ -149,6 +155,8 @@ class LevelGenerator {
     );
 
     final Set<String> jelly = _generateJellyLayout(goal, rows, cols, cycleIndex);
+    final Set<String> frozen = _generateObstacleLayout(effectiveLevel, diffType, rows, cols, isFrozen: true);
+    final Set<String> crates = _generateObstacleLayout(effectiveLevel, diffType, rows, cols, isFrozen: false);
 
     final int baseScorePerMove = (180 + (tierFactor * 70)).round();
     final int targetScore = goal.type == LevelGoalType.score
@@ -174,8 +182,36 @@ class LevelGenerator {
       star3Score: star3,
       fruitVarietyCount: fruitCount,
       jellyTiles: jelly,
+      frozenTiles: frozen,
+      crateTiles: crates,
       reward: reward,
     );
+  }
+
+  static Set<String> _generateObstacleLayout(int effectiveLevel, LevelDifficultyType diffType, int rows, int cols, {required bool isFrozen}) {
+    if (isFrozen) {
+      if (effectiveLevel < 8 || diffType == LevelDifficultyType.intro) return const {};
+      final count = min(2 + (effectiveLevel ~/ 20), 8);
+      final frozen = <String>{};
+      final offset = (effectiveLevel % 4);
+      for (int i = 0; i < count; i++) {
+        final r = (1 + ((i * 2 + offset) % (rows - 2)));
+        final c = (1 + ((i * 3 + offset) % (cols - 2)));
+        frozen.add('${r}_$c');
+      }
+      return frozen;
+    } else {
+      if (effectiveLevel < 15 || diffType == LevelDifficultyType.intro) return const {};
+      final count = min(2 + (effectiveLevel ~/ 30), 6);
+      final crates = <String>{};
+      final offset = ((effectiveLevel * 3) % 5);
+      for (int i = 0; i < count; i++) {
+        final r = (2 + ((i + offset) % (rows - 4)));
+        final c = (2 + ((i * 2 + offset) % (cols - 4)));
+        crates.add('${r}_$c');
+      }
+      return crates;
+    }
   }
 
   static LevelDifficultyType _determineDifficultyType(int cycleIndex) {

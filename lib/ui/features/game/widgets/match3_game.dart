@@ -128,6 +128,8 @@ class Match3Game extends FlameGame {
         existing.col = tile.col;
         existing.type = tile.type;
         existing.emoji = tile.emoji;
+        existing.isFrozen = tile.isFrozen;
+        existing.crateHealth = tile.crateHealth;
       } else {
         final spawnY = startY - cellSize * 2;
         final spawnX = startX + tile.col * cellSize;
@@ -140,6 +142,8 @@ class Match3Game extends FlameGame {
           initialY: spawnY,
           sizeVal: cellSize,
           type: tile.type,
+          isFrozen: tile.isFrozen,
+          crateHealth: tile.crateHealth,
         );
         _components[tile.id] = comp;
         add(comp);
@@ -302,6 +306,8 @@ class FruitComponent extends PositionComponent {
   int row;
   int col;
   TileType type;
+  bool isFrozen;
+  int crateHealth;
   bool isDestroying = false;
   double scaleVal = 0.0;
   double opacity = 1.0;
@@ -321,6 +327,8 @@ class FruitComponent extends PositionComponent {
     required double initialY,
     required double sizeVal,
     required this.type,
+    this.isFrozen = false,
+    this.crateHealth = 0,
   }) {
     position = Vector2(initialX, initialY);
     size = Vector2(sizeVal, sizeVal);
@@ -438,6 +446,28 @@ class FruitComponent extends PositionComponent {
     );
     tp.layout();
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+
+    if (isFrozen) {
+      final iceFill = Paint()
+        ..color = const Color(0xFFB0ECFF).withValues(alpha: 0.45 * opacity)
+        ..style = PaintingStyle.fill;
+      final iceBorder = Paint()
+        ..color = const Color(0xFFE0F7FF).withValues(alpha: 0.9 * opacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5;
+      final iceRect = Rect.fromCenter(center: Offset.zero, width: size.x * 0.88, height: size.y * 0.88);
+      canvas.drawRRect(RRect.fromRectAndRadius(iceRect, const Radius.circular(8)), iceFill);
+      canvas.drawRRect(RRect.fromRectAndRadius(iceRect, const Radius.circular(8)), iceBorder);
+    }
+
+    if (type == TileType.crate) {
+      final cratePaint = Paint()
+        ..color = const Color(0xFF8D6E63).withValues(alpha: 0.85 * opacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      final crateRect = Rect.fromCenter(center: Offset.zero, width: size.x * 0.82, height: size.y * 0.82);
+      canvas.drawRRect(RRect.fromRectAndRadius(crateRect, const Radius.circular(6)), cratePaint);
+    }
 
     if (type == TileType.stripedHorizontal) {
       final stripePaint = Paint()

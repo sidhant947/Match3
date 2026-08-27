@@ -115,11 +115,7 @@ class _HomeViewState extends ConsumerState<HomeView>
           gradient: RadialGradient(
             center: Alignment(0, -0.2),
             radius: 1.3,
-            colors: [
-              Color(0xFF222222),
-              Color(0xFF161616),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF222222), Color(0xFF161616), Color(0xFF0F0F0F)],
             stops: [0.0, 0.65, 1.0],
           ),
         ),
@@ -133,6 +129,7 @@ class _HomeViewState extends ConsumerState<HomeView>
                   children: [
                     _circleButton(
                       icon: Icons.star_rounded,
+                      iconColor: const Color(0xFFFFCE31),
                       onTap: () =>
                           _launchUrl('https://github.com/sidhant947/Match3'),
                     ),
@@ -158,7 +155,8 @@ class _HomeViewState extends ConsumerState<HomeView>
                       const SizedBox.shrink(),
                     _circleButton(
                       icon: Icons.favorite_rounded,
-                      onTap: () => _launchUrl('https://liberapay.com/sidhant947'),
+                      iconColor: const Color(0xFFFF4D4D),
+                      onTap: () => _launchUrl('https://ko-fi.com/sidhant947'),
                     ),
                   ],
                 ),
@@ -182,7 +180,9 @@ class _HomeViewState extends ConsumerState<HomeView>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFFFD56B).withValues(alpha: 0.4),
+                                    color: const Color(
+                                      0xFFFFD56B,
+                                    ).withValues(alpha: 0.4),
                                     blurRadius: _glowAnimation.value * 1.5,
                                     spreadRadius: _glowAnimation.value / 2,
                                   ),
@@ -193,9 +193,7 @@ class _HomeViewState extends ConsumerState<HomeView>
                         },
                       ),
                       Positioned.fill(
-                        child: GemWidget(
-                          gemType: GemType.values[_gemIndex],
-                        ),
+                        child: GemWidget(gemType: GemType.values[_gemIndex]),
                       ),
                     ],
                   ),
@@ -240,10 +238,8 @@ class _HomeViewState extends ConsumerState<HomeView>
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const GameView(
-                        levelNumber: 1,
-                        isZenMode: true,
-                      ),
+                      builder: (context) =>
+                          const GameView(levelNumber: 1, isZenMode: true),
                     ),
                   ),
                 ),
