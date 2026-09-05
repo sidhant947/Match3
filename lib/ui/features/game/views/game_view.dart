@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:match3/domain/models/level_generator.dart';
 import 'package:match3/domain/models/level_goal.dart';
+import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/core/widgets/tangible_button.dart';
 import 'package:match3/ui/features/game/view_models/game_view_model.dart';
 import 'package:match3/ui/features/game/widgets/match3_game.dart';
@@ -15,10 +16,12 @@ class GameView extends ConsumerStatefulWidget {
     super.key,
     required this.levelNumber,
     this.isZenMode = false,
+    this.isTimeAttack = false,
   });
 
   final int levelNumber;
   final bool isZenMode;
+  final bool isTimeAttack;
 
   @override
   ConsumerState<GameView> createState() => _GameViewState();
@@ -35,7 +38,11 @@ class _GameViewState extends ConsumerState<GameView> {
     super.initState();
     final progressRepo = ref.read(progressRepositoryProvider);
     _viewModel = GameViewModel(progressRepository: progressRepo);
-    _viewModel.initGame(level: widget.levelNumber, isZenMode: widget.isZenMode);
+    _viewModel.initGame(
+      level: widget.levelNumber,
+      isZenMode: widget.isZenMode,
+      isTimeAttack: widget.isTimeAttack,
+    );
     _game = Match3Game(viewModel: _viewModel);
   }
 
@@ -47,8 +54,15 @@ class _GameViewState extends ConsumerState<GameView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _confirmLeave();
+        }
+      },
+      child: Scaffold(
+        body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment(0, -0.2),
@@ -78,12 +92,14 @@ class _GameViewState extends ConsumerState<GameView> {
                           children: [
                             _circleButton(
                               icon: Icons.arrow_back_ios_new_rounded,
-                              onTap: () => Navigator.pop(context),
+                              onTap: _confirmLeave,
                             ),
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  widget.isZenMode ? 'ZEN MODE' : 'LEVEL ${state.levelNumber}',
+                                  widget.isZenMode
+                                      ? 'ZEN MODE'
+                                      : (widget.isTimeAttack ? 'TIME ATTACK' : 'LEVEL ${state.levelNumber}'),
                                   style: const TextStyle(
                                     fontFamily: 'BebasNeue',
                                     color: Colors.white,
@@ -103,12 +119,16 @@ class _GameViewState extends ConsumerState<GameView> {
                             ),
                             _circleButton(
                               icon: Icons.refresh_rounded,
-                              onTap: () => _viewModel.initGame(level: state.levelNumber, isZenMode: widget.isZenMode),
+                              onTap: () => _viewModel.initGame(
+                                level: state.levelNumber,
+                                isZenMode: widget.isZenMode,
+                                isTimeAttack: widget.isTimeAttack,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      if (!widget.isZenMode) ...[
+                      if (!widget.isZenMode && !widget.isTimeAttack) ...[
                         const SizedBox(height: 4),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -208,6 +228,34 @@ class _GameViewState extends ConsumerState<GameView> {
                           ),
                         ),
                       ],
+                      if (widget.isTimeAttack) ...[
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: _buildStatBadge(
+                                  title: 'SCORE',
+                                  value: '${state.score}',
+                                  subValue: '',
+                                  color: const Color(0xFFFFCE31),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildStatBadge(
+                                  title: 'TIME LEFT',
+                                  value: '${state.timeLeft}s',
+                                  subValue: '',
+                                  color: state.timeLeft <= 10 ? const Color(0xFFFF4D4D) : const Color(0xFF64D2FF),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       Expanded(
                         child: Column(
                           children: [
@@ -291,13 +339,17 @@ class _GameViewState extends ConsumerState<GameView> {
                     ),
                   if (state.isGameOver && !widget.isZenMode)
                     _buildOverlay(
-                      title: isWin ? 'LEVEL COMPLETE!' : 'OUT OF MOVES!',
-                      message: isWin
-                          ? 'Target reached with great combos!'
-                          : 'Give it another shot to clear this level.',
+                      title: widget.isTimeAttack
+                          ? "TIME'S UP!"
+                          : (isWin ? 'LEVEL COMPLETE!' : 'OUT OF MOVES!'),
+                      message: widget.isTimeAttack
+                          ? 'Great run! Can you beat your score?'
+                          : (isWin
+                              ? 'Target reached with great combos!'
+                              : 'Give it another shot to clear this level.'),
                       score: state.score,
                       starsEarned: state.starsEarned,
-                      isWin: isWin,
+                      isWin: widget.isTimeAttack ? true : isWin,
                       currentLevel: state.levelNumber,
                     ),
                 ],
@@ -305,8 +357,53 @@ class _GameViewState extends ConsumerState<GameView> {
             },
           ),
         ),
+        ),
       ),
     );
+  }
+
+  Future<void> _confirmLeave() async {
+    if (!mounted) return;
+
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF242424),
+          title: const Text(
+            'LEAVE GAME?',
+            style: TextStyle(
+              fontFamily: 'BebasNeue',
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: 1.2,
+            ),
+          ),
+          content: const Text(
+            'Your current progress will be lost. Do you really want to leave the playing screen?',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('KEEP PLAYING'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text(
+                'LEAVE',
+                style: TextStyle(color: Color(0xFFFF4D4D)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLeave == true && mounted) {
+      Navigator.pop(context);
+    }
   }
 
   Widget _circleButton({
@@ -315,7 +412,10 @@ class _GameViewState extends ConsumerState<GameView> {
     double iconSize = 18,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticService.mediumImpact();
+        onTap();
+      },
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
@@ -560,7 +660,15 @@ class _GameViewState extends ConsumerState<GameView> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (isWin)
+                if (widget.isTimeAttack)
+                  TangibleButton(
+                    text: 'PLAY AGAIN',
+                    height: 44,
+                    onPressed: () {
+                      _viewModel.initGame(level: 1, isTimeAttack: true);
+                    },
+                  )
+                else if (isWin)
                   TangibleButton(
                     text: 'NEXT LEVEL',
                     height: 44,
@@ -704,4 +812,3 @@ class _ComboBannerWidgetState extends State<_ComboBannerWidget> with SingleTicke
     );
   }
 }
-

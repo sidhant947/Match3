@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:match3/domain/models/level_generator.dart';
+import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/features/game/views/game_view.dart';
 import 'package:match3/ui/providers.dart';
 
@@ -35,7 +35,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
   Widget _backButton() {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.mediumImpact().catchError((_) {});
+        HapticService.mediumImpact();
         Navigator.pop(context);
       },
       child: Container(
@@ -283,7 +283,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
     return GestureDetector(
       onTap: isClickable
           ? () async {
-              HapticFeedback.lightImpact().catchError((_) {});
+              HapticService.lightImpact();
               await Navigator.push(
                 context,
                 MaterialPageRoute(

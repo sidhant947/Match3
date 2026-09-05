@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:match3/ui/core/utils/haptic_service.dart';
 
 class TangibleButton extends StatefulWidget {
   const TangibleButton({
@@ -45,7 +45,7 @@ class _TangibleButtonState extends State<TangibleButton> with SingleTickerProvid
     if (widget.onPressed != null) {
       setState(() => _isPressed = true);
       _animController.reverse();
-      HapticFeedback.lightImpact().catchError((_) {});
+      HapticService.lightImpact();
     }
   }
 

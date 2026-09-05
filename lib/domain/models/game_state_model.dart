@@ -24,6 +24,8 @@ class GameStateModel {
   final Set<String> hintTileIds;
   final bool isShuffling;
   final bool isSugarCrush;
+  final bool isTimeAttack;
+  final int timeLeft;
   final LevelConfig? levelConfig;
 
   const GameStateModel({
@@ -51,6 +53,8 @@ class GameStateModel {
     this.hintTileIds = const {},
     this.isShuffling = false,
     this.isSugarCrush = false,
+    this.isTimeAttack = false,
+    this.timeLeft = 60,
     this.levelConfig,
   });
 
@@ -82,6 +86,8 @@ class GameStateModel {
     Set<String>? hintTileIds,
     bool? isShuffling,
     bool? isSugarCrush,
+    bool? isTimeAttack,
+    int? timeLeft,
     LevelConfig? levelConfig,
   }) {
     return GameStateModel(
@@ -104,6 +110,8 @@ class GameStateModel {
       hintTileIds: hintTileIds ?? this.hintTileIds,
       isShuffling: isShuffling ?? this.isShuffling,
       isSugarCrush: isSugarCrush ?? this.isSugarCrush,
+      isTimeAttack: isTimeAttack ?? this.isTimeAttack,
+      timeLeft: timeLeft ?? this.timeLeft,
       levelConfig: levelConfig ?? this.levelConfig,
     );
   }

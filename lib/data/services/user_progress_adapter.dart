@@ -25,17 +25,23 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       currentLevel: fields[0] as int? ?? 1,
       highestLevelCompleted: fields[1] as int? ?? 0,
       levelStars: starsMap,
+      hintsEnabled: fields[3] as bool? ?? true,
+      hapticsEnabled: fields[4] as bool? ?? true,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProgress obj) {
-    writer.writeByte(3);
+    writer.writeByte(5);
     writer.writeByte(0);
     writer.write(obj.currentLevel);
     writer.writeByte(1);
     writer.write(obj.highestLevelCompleted);
     writer.writeByte(2);
     writer.write(obj.levelStars);
+    writer.writeByte(3);
+    writer.write(obj.hintsEnabled);
+    writer.writeByte(4);
+    writer.write(obj.hapticsEnabled);
   }
 }

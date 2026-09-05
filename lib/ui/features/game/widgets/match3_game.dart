@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:match3/domain/models/tile_model.dart';
+import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/features/game/view_models/game_view_model.dart';
 
 class Match3Game extends FlameGame {
@@ -61,6 +62,11 @@ class Match3Game extends FlameGame {
   void triggerShake(double intensity) {
     _shakeIntensity = intensity;
     _shakeTimer = 0.25;
+    if (intensity >= 4.5) {
+      HapticService.heavyImpact();
+    } else {
+      HapticService.mediumImpact();
+    }
   }
 
   @override
@@ -187,19 +193,23 @@ class Match3Game extends FlameGame {
       if (selectedRow == null || selectedCol == null) {
         selectedRow = row;
         selectedCol = col;
+        HapticService.selectionClick();
       } else if (selectedRow == row && selectedCol == col) {
         selectedRow = null;
         selectedCol = null;
+        HapticService.selectionClick();
       } else {
         final diffRow = (row - selectedRow!).abs();
         final diffCol = (col - selectedCol!).abs();
         if ((diffRow == 1 && diffCol == 0) || (diffRow == 0 && diffCol == 1)) {
+          HapticService.lightImpact();
           viewModel.swapTiles(selectedRow!, selectedCol!, row, col);
           selectedRow = null;
           selectedCol = null;
         } else {
           selectedRow = row;
           selectedCol = col;
+          HapticService.selectionClick();
         }
       }
     } else {
@@ -233,6 +243,7 @@ class Match3Game extends FlameGame {
     }
 
     if (targetRow >= 0 && targetRow < viewModel.state.rows && targetCol >= 0 && targetCol < viewModel.state.cols) {
+      HapticService.lightImpact();
       viewModel.swapTiles(row, col, targetRow, targetCol);
     }
   }
@@ -682,5 +693,4 @@ class ScorePopupComponent extends PositionComponent {
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
   }
 }
-
 

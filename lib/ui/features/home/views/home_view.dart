@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 
 import 'package:match3/domain/models/gem.dart';
+import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/core/widgets/custom_gem_painter.dart';
 import 'package:match3/ui/core/widgets/tangible_button.dart';
 import 'package:match3/ui/features/game/views/game_view.dart';
 import 'package:match3/ui/features/level_select/views/level_select_view.dart';
+import 'package:match3/ui/features/settings/views/settings_view.dart';
 import 'package:match3/ui/providers.dart';
 
 class HomeView extends ConsumerStatefulWidget {
@@ -72,7 +73,7 @@ class _HomeViewState extends ConsumerState<HomeView>
   }) {
     return GestureDetector(
       onTap: () {
-        HapticFeedback.mediumImpact().catchError((_) {});
+        HapticService.mediumImpact();
         onTap();
       },
       child: Container(
@@ -153,10 +154,15 @@ class _HomeViewState extends ConsumerState<HomeView>
                       )
                     else
                       const SizedBox.shrink(),
-                    _circleButton(
-                      icon: Icons.favorite_rounded,
-                      iconColor: const Color(0xFFFF4D4D),
-                      onTap: () => _launchUrl('https://ko-fi.com/sidhant947'),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _circleButton(
+                          icon: Icons.favorite_rounded,
+                          iconColor: const Color(0xFFFF4D4D),
+                          onTap: () => _launchUrl('https://ko-fi.com/sidhant947'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -233,6 +239,18 @@ class _HomeViewState extends ConsumerState<HomeView>
                 ),
                 const SizedBox(height: 16),
                 TangibleButton(
+                  text: 'Time Attack',
+                  isSecondary: true,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const GameView(levelNumber: 1, isTimeAttack: true),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TangibleButton(
                   text: 'Zen Mode',
                   isSecondary: true,
                   onPressed: () => Navigator.push(
@@ -242,6 +260,20 @@ class _HomeViewState extends ConsumerState<HomeView>
                           const GameView(levelNumber: 1, isZenMode: true),
                     ),
                   ),
+                ),
+                const SizedBox(height: 16),
+                TangibleButton(
+                  text: 'Settings',
+                  isSecondary: true,
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsView(),
+                      ),
+                    );
+                    ref.read(homeViewModelProvider.notifier).loadProgress();
+                  },
                 ),
                 const Spacer(),
               ],

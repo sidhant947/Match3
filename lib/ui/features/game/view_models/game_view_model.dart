@@ -13,8 +13,11 @@ class GameViewModel extends ChangeNotifier {
 
   late LevelConfig _levelConfig;
   bool _isZenMode = false;
+  bool _isTimeAttack = false;
   late LevelGoal _currentGoal;
   Timer? _hintTimer;
+  Timer? _timeAttackTimer;
+  Set<String> _lastSwappedTileIds = const {};
 
   GameStateModel _state = const GameStateModel(
     tiles: [],
@@ -40,14 +43,24 @@ class GameViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _hintTimer?.cancel();
+    _timeAttackTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> initGame({int level = 1, bool isZenMode = false}) async {
+  Future<void> initGame({int level = 1, bool isZenMode = false, bool isTimeAttack = false}) async {
     _hintTimer?.cancel();
+    _timeAttackTimer?.cancel();
     _isZenMode = isZenMode;
-    _levelConfig = LevelGenerator.generate(level, isZenMode: isZenMode, rows: 8, cols: 8);
-    _currentGoal = _levelConfig.goal;
+    _isTimeAttack = isTimeAttack;
+    _levelConfig = LevelGenerator.generate(level, isZenMode: isZenMode || isTimeAttack, rows: 8, cols: 8);
+    _currentGoal = isTimeAttack
+        ? const LevelGoal(
+            type: LevelGoalType.score,
+            title: 'TIME ATTACK',
+            description: 'Score as much as you can before time runs out!',
+            targetValue: 999999,
+          )
+        : _levelConfig.goal;
 
     final userProgress = await progressRepository.getProgress();
     final effectiveHighScore = userProgress.levelStars[level.toString()] != null
@@ -60,7 +73,7 @@ class GameViewModel extends ChangeNotifier {
       tiles: initialTiles,
       score: 0,
       highScore: effectiveHighScore,
-      movesLeft: _levelConfig.moves,
+      movesLeft: isTimeAttack ? 999 : _levelConfig.moves,
       targetScore: _levelConfig.targetScore,
       goal: _currentGoal,
       isGameOver: false,
@@ -75,11 +88,40 @@ class GameViewModel extends ChangeNotifier {
       jellyTiles: _levelConfig.jellyTiles,
       hintTileIds: const {},
       isShuffling: false,
+      isTimeAttack: isTimeAttack,
+      timeLeft: isTimeAttack ? 60 : 0,
       levelConfig: _levelConfig,
     );
     _isProcessing = false;
     notifyListeners();
     _resetHintTimer();
+
+    if (isTimeAttack) {
+      _startTimeAttackTimer();
+    }
+  }
+
+  void _startTimeAttackTimer() {
+    _timeAttackTimer?.cancel();
+    _timeAttackTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_state.isGameOver) {
+        timer.cancel();
+        return;
+      }
+      final newTime = _state.timeLeft - 1;
+      if (newTime <= 0) {
+        timer.cancel();
+        _state = _state.copyWith(
+          timeLeft: 0,
+          isGameOver: true,
+          starsEarned: calculateStars(_state.score),
+        );
+        notifyListeners();
+      } else {
+        _state = _state.copyWith(timeLeft: newTime);
+        notifyListeners();
+      }
+    });
   }
 
   int calculateStars(int score) {
@@ -177,8 +219,10 @@ class GameViewModel extends ChangeNotifier {
     _hintTimer?.cancel();
     if (_state.isGameOver || _isProcessing) return;
 
-    _hintTimer = Timer(const Duration(seconds: 5), () {
+    _hintTimer = Timer(const Duration(seconds: 5), () async {
       if (_isProcessing || _state.isGameOver) return;
+      final progress = await progressRepository.getProgress();
+      if (!progress.hintsEnabled) return;
 
       final move = findPossibleMove(_state.tiles, _state.rows, _state.cols);
       if (move != null) {
@@ -268,7 +312,7 @@ class GameViewModel extends ChangeNotifier {
       notifyListeners();
 
       if (_isSpecialCombination(tile1, tile2)) {
-        final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
+        final newMoves = (_isZenMode || _isTimeAttack) ? _state.movesLeft : _state.movesLeft - 1;
         _state = _state.copyWith(movesLeft: newMoves);
         await _handleSpecialCombination(tile1.copyWith(row: r2, col: c2), tile2.copyWith(row: r1, col: c1));
         return true;
@@ -289,13 +333,15 @@ class GameViewModel extends ChangeNotifier {
         return false;
       }
 
-      final newMoves = _isZenMode ? _state.movesLeft : _state.movesLeft - 1;
+      final newMoves = (_isZenMode || _isTimeAttack) ? _state.movesLeft : _state.movesLeft - 1;
       _state = _state.copyWith(movesLeft: newMoves, comboCount: 0);
+      _lastSwappedTileIds = {tile1.id, tile2.id};
       notifyListeners();
 
       await _processMatchesAndCascade();
       return true;
     } finally {
+      _lastSwappedTileIds = const {};
       _isProcessing = false;
       _resetHintTimer();
     }
@@ -384,8 +430,10 @@ class GameViewModel extends ChangeNotifier {
   }
 
   Future<void> _processMatchesAndCascade() async {
+    bool isFirstScan = true;
     while (true) {
-      final scanResult = _scanAndGenerateSpecials(_state.tiles);
+      final scanResult = _scanAndGenerateSpecials(_state.tiles, isFirstScan ? _lastSwappedTileIds : const {});
+      isFirstScan = false;
       final rawMatches = scanResult.matched;
       if (rawMatches.isEmpty) break;
 
@@ -412,7 +460,7 @@ class GameViewModel extends ChangeNotifier {
       final destroyedTiles = _state.tiles.where((t) => finalExplodedIds.contains(t.id)).toList();
       final remainingJelly = Set<String>.from(_state.jellyTiles);
       int clearedJelly = 0;
-      for (final t in destroyedTiles) {
+      for (final t in exploded) {
         final key = '${t.row}_${t.col}';
         if (remainingJelly.remove(key)) {
           clearedJelly++;
@@ -629,7 +677,7 @@ class GameViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  ScanResult _scanAndGenerateSpecials(List<TileModel> tiles) {
+  ScanResult _scanAndGenerateSpecials(List<TileModel> tiles, [Set<String> prioritizedTileIds = const {}]) {
     final matched = <TileModel>{};
     final specials = <String, TileType>{};
     final horizMatches = <Set<String>>[];
@@ -647,17 +695,25 @@ class GameViewModel extends ChangeNotifier {
           final length = c - matchStart;
           if (length >= 3) {
             final group = <String>{};
+            final lineTiles = <TileModel>[];
             for (int i = matchStart; i < c; i++) {
               final t = tiles.firstWhere((item) => item.row == r && item.col == i);
               matched.add(t);
               group.add(t.id);
+              lineTiles.add(t);
             }
             horizMatches.add(group);
             if (length == 4) {
-              final specialTile = tiles.firstWhere((item) => item.row == r && item.col == matchStart + 1);
+              final specialTile = lineTiles.firstWhere(
+                (t) => prioritizedTileIds.contains(t.id),
+                orElse: () => lineTiles[1],
+              );
               specials[specialTile.id] = TileType.stripedHorizontal;
             } else if (length >= 5) {
-              final specialTile = tiles.firstWhere((item) => item.row == r && item.col == matchStart + 2);
+              final specialTile = lineTiles.firstWhere(
+                (t) => prioritizedTileIds.contains(t.id),
+                orElse: () => lineTiles[2],
+              );
               specials[specialTile.id] = TileType.colorBomb;
             }
           }
@@ -678,17 +734,25 @@ class GameViewModel extends ChangeNotifier {
           final length = r - matchStart;
           if (length >= 3) {
             final group = <String>{};
+            final lineTiles = <TileModel>[];
             for (int i = matchStart; i < r; i++) {
               final t = tiles.firstWhere((item) => item.row == i && item.col == c);
               matched.add(t);
               group.add(t.id);
+              lineTiles.add(t);
             }
             vertMatches.add(group);
             if (length == 4) {
-              final specialTile = tiles.firstWhere((item) => item.row == matchStart + 1 && item.col == c);
+              final specialTile = lineTiles.firstWhere(
+                (t) => prioritizedTileIds.contains(t.id),
+                orElse: () => lineTiles[1],
+              );
               specials[specialTile.id] = TileType.stripedVertical;
             } else if (length >= 5) {
-              final specialTile = tiles.firstWhere((item) => item.row == matchStart + 2 && item.col == c);
+              final specialTile = lineTiles.firstWhere(
+                (t) => prioritizedTileIds.contains(t.id),
+                orElse: () => lineTiles[2],
+              );
               specials[specialTile.id] = TileType.colorBomb;
             }
           }
