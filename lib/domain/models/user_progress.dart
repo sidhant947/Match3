@@ -8,6 +8,7 @@ class UserProgress {
     this.levelStars = const {},
     this.hintsEnabled = true,
     this.hapticsEnabled = true,
+    this.audioEnabled = true,
   });
 
   final int currentLevel;
@@ -15,6 +16,7 @@ class UserProgress {
   final Map<String, int> levelStars;
   final bool hintsEnabled;
   final bool hapticsEnabled;
+  final bool audioEnabled;
 
   UserProgress copyWith({
     int? currentLevel,
@@ -22,6 +24,7 @@ class UserProgress {
     Map<String, int>? levelStars,
     bool? hintsEnabled,
     bool? hapticsEnabled,
+    bool? audioEnabled,
   }) {
     return UserProgress(
       currentLevel: currentLevel ?? this.currentLevel,
@@ -29,6 +32,7 @@ class UserProgress {
       levelStars: levelStars ?? this.levelStars,
       hintsEnabled: hintsEnabled ?? this.hintsEnabled,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
+      audioEnabled: audioEnabled ?? this.audioEnabled,
     );
   }
 
@@ -52,4 +56,3 @@ class UserProgress {
     );
   }
 }
-

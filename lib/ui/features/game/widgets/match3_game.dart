@@ -1,15 +1,18 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:match3/domain/models/tile_model.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
+import 'package:match3/ui/core/utils/sound_service.dart';
 import 'package:match3/ui/features/game/view_models/game_view_model.dart';
 
 class Match3Game extends FlameGame {
   final GameViewModel viewModel;
   final Map<String, FruitComponent> _components = {};
   final List<ParticleComponent> _particles = [];
+  final Set<String> _knownSpecialIds = {};
 
   double cellSize = 0;
   double startX = 0;
@@ -89,6 +92,12 @@ class Match3Game extends FlameGame {
     final activeIds = currentTiles.map((t) => t.id).toSet();
 
     final toRemove = _components.keys.where((id) => !activeIds.contains(id)).toList();
+    var hasSpecialMatch = toRemove.any((id) => _components[id]?.type != TileType.normal);
+    hasSpecialMatch = hasSpecialMatch || currentTiles.any(
+      (tile) => tile.type != TileType.normal &&
+          tile.type != TileType.crate &&
+          !_knownSpecialIds.contains(tile.id),
+    );
     for (final id in toRemove) {
       final comp = _components[id];
       if (comp != null) {
@@ -126,6 +135,13 @@ class Match3Game extends FlameGame {
         }
       }
     }
+
+    if (toRemove.isNotEmpty && SoundService.enabled) {
+      FlameAudio.play(hasSpecialMatch ? 'combo_special.mp3' : 'combo.mp3');
+    }
+    _knownSpecialIds
+      ..clear()
+      ..addAll(currentTiles.where((tile) => tile.type != TileType.normal && tile.type != TileType.crate).map((tile) => tile.id));
 
     for (final tile in currentTiles) {
       final existing = _components[tile.id];
@@ -693,4 +709,3 @@ class ScorePopupComponent extends PositionComponent {
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
   }
 }
-

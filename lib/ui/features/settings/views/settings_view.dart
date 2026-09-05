@@ -41,6 +41,7 @@ class SettingsView extends ConsumerWidget {
     final progressRepo = ref.read(progressRepositoryProvider);
     final hintsEnabled = homeState.progress?.hintsEnabled ?? true;
     final hapticsEnabled = homeState.progress?.hapticsEnabled ?? true;
+    final audioEnabled = homeState.progress?.audioEnabled ?? true;
 
     return Scaffold(
       body: Container(
@@ -161,6 +162,20 @@ class SettingsView extends ConsumerWidget {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _settingTile(
+                  icon: Icons.volume_up_rounded,
+                  title: 'SOUND EFFECTS',
+                  description: 'Play match and combo sounds',
+                  value: audioEnabled,
+                  onChanged: (val) {
+                    HapticService.lightImpact();
+                    progressRepo.setAudioEnabled(val);
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
@@ -234,6 +249,65 @@ class SettingsView extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _settingTile({required IconData icon, required String title, required String description, required bool value, required ValueChanged<bool> onChanged}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF222222),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF383838), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            offset: const Offset(0, 4),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2E2E2E),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF444444)),
+            ),
+            child: Icon(icon, color: const Color(0xFFFFCE31), size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'BebasNeue',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(description, style: const TextStyle(fontSize: 12, color: Color(0xFFB0B0B0))),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            activeThumbColor: const Color(0xFFFFCE31),
+            activeTrackColor: const Color(0xFFFFCE31).withValues(alpha: 0.4),
+            inactiveThumbColor: const Color(0xFF777777),
+            inactiveTrackColor: const Color(0xFF333333),
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
