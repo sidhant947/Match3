@@ -25,6 +25,7 @@ class GameStateModel {
   final bool isShuffling;
   final bool isSugarCrush;
   final bool isTimeAttack;
+  final bool isTwistMode;
   final int timeLeft;
   final LevelConfig? levelConfig;
 
@@ -54,6 +55,7 @@ class GameStateModel {
     this.isShuffling = false,
     this.isSugarCrush = false,
     this.isTimeAttack = false,
+    this.isTwistMode = false,
     this.timeLeft = 60,
     this.levelConfig,
   });
@@ -87,6 +89,7 @@ class GameStateModel {
     bool? isShuffling,
     bool? isSugarCrush,
     bool? isTimeAttack,
+    bool? isTwistMode,
     int? timeLeft,
     LevelConfig? levelConfig,
   }) {
@@ -111,6 +114,7 @@ class GameStateModel {
       isShuffling: isShuffling ?? this.isShuffling,
       isSugarCrush: isSugarCrush ?? this.isSugarCrush,
       isTimeAttack: isTimeAttack ?? this.isTimeAttack,
+      isTwistMode: isTwistMode ?? this.isTwistMode,
       timeLeft: timeLeft ?? this.timeLeft,
       levelConfig: levelConfig ?? this.levelConfig,
     );

@@ -17,11 +17,13 @@ class GameView extends ConsumerStatefulWidget {
     required this.levelNumber,
     this.isZenMode = false,
     this.isTimeAttack = false,
+    this.isTwistMode = false,
   });
 
   final int levelNumber;
   final bool isZenMode;
   final bool isTimeAttack;
+  final bool isTwistMode;
 
   @override
   ConsumerState<GameView> createState() => _GameViewState();
@@ -42,6 +44,7 @@ class _GameViewState extends ConsumerState<GameView> {
       level: widget.levelNumber,
       isZenMode: widget.isZenMode,
       isTimeAttack: widget.isTimeAttack,
+      isTwistMode: widget.isTwistMode,
     );
     _game = Match3Game(viewModel: _viewModel);
   }
@@ -99,7 +102,9 @@ class _GameViewState extends ConsumerState<GameView> {
                                 child: Text(
                                   widget.isZenMode
                                       ? 'ZEN MODE'
-                                      : (widget.isTimeAttack ? 'TIME ATTACK' : 'LEVEL ${state.levelNumber}'),
+                                      : (widget.isTwistMode
+                                          ? 'TWIST MODE'
+                                          : (widget.isTimeAttack ? 'TIME ATTACK' : 'LEVEL ${state.levelNumber}')),
                                   style: const TextStyle(
                                     fontFamily: 'BebasNeue',
                                     color: Colors.white,
@@ -123,12 +128,13 @@ class _GameViewState extends ConsumerState<GameView> {
                                 level: state.levelNumber,
                                 isZenMode: widget.isZenMode,
                                 isTimeAttack: widget.isTimeAttack,
+                                isTwistMode: widget.isTwistMode,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      if (!widget.isZenMode && !widget.isTimeAttack) ...[
+                      if (!widget.isZenMode && !widget.isTimeAttack && !widget.isTwistMode) ...[
                         const SizedBox(height: 4),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -228,6 +234,25 @@ class _GameViewState extends ConsumerState<GameView> {
                           ),
                         ),
                       ],
+                      if (widget.isZenMode || widget.isTwistMode) ...[
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: _buildStatBadge(
+                                  title: 'SCORE',
+                                  value: '${state.score}',
+                                  subValue: '',
+                                  color: const Color(0xFFFFCE31),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (widget.isTimeAttack) ...[
                         const SizedBox(height: 6),
                         Padding(
@@ -274,11 +299,18 @@ class _GameViewState extends ConsumerState<GameView> {
                                     _hasSwiped = false;
                                   },
                                   onPointerMove: (event) {
-                                    if (_pointerStartPos == null || _hasSwiped) return;
+                                    if (_pointerStartPos == null) return;
                                     final delta = event.localPosition - _pointerStartPos!;
-                                    if (delta.distance > 20) {
-                                      _hasSwiped = true;
-                                      _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
+                                    if (widget.isTwistMode) {
+                                      if (delta.distance > 10) {
+                                        _hasSwiped = true;
+                                        _game.handleTwistDrag(event.localPosition);
+                                      }
+                                    } else {
+                                      if (!_hasSwiped && delta.distance > 20) {
+                                        _hasSwiped = true;
+                                        _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
+                                      }
                                     }
                                   },
                                   onPointerUp: (event) {
@@ -291,9 +323,23 @@ class _GameViewState extends ConsumerState<GameView> {
                                 ),
                               ),
                             ),
-                            const Expanded(
-                              child: SizedBox(),
-                            ),
+                            if (widget.isTwistMode) ...[
+                              Expanded(
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                                    child: TangibleButton(
+                                      text: 'TWIST ↻',
+                                      onPressed: _game.twistCurrent,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              const Expanded(
+                                child: SizedBox(),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -337,7 +383,7 @@ class _GameViewState extends ConsumerState<GameView> {
                         ),
                       ),
                     ),
-                  if (state.isGameOver && !widget.isZenMode)
+                  if (state.isGameOver && !widget.isZenMode && !widget.isTwistMode)
                     _buildOverlay(
                       title: widget.isTimeAttack
                           ? "TIME'S UP!"

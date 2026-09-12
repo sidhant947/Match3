@@ -263,6 +263,18 @@ class _HomeViewState extends ConsumerState<HomeView>
                 ),
                 const SizedBox(height: 16),
                 TangibleButton(
+                  text: 'Twist Mode',
+                  isSecondary: true,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const GameView(levelNumber: 1, isTwistMode: true),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TangibleButton(
                   text: 'Settings',
                   isSecondary: true,
                   onPressed: () async {

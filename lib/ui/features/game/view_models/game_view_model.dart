@@ -14,6 +14,8 @@ class GameViewModel extends ChangeNotifier {
   late LevelConfig _levelConfig;
   bool _isZenMode = false;
   bool _isTimeAttack = false;
+  bool _isTwistMode = false;
+  bool get isTwistMode => _isTwistMode;
   late LevelGoal _currentGoal;
   Timer? _hintTimer;
   Timer? _timeAttackTimer;
@@ -47,12 +49,13 @@ class GameViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<void> initGame({int level = 1, bool isZenMode = false, bool isTimeAttack = false}) async {
+  Future<void> initGame({int level = 1, bool isZenMode = false, bool isTimeAttack = false, bool isTwistMode = false}) async {
     _hintTimer?.cancel();
     _timeAttackTimer?.cancel();
     _isZenMode = isZenMode;
     _isTimeAttack = isTimeAttack;
-    _levelConfig = LevelGenerator.generate(level, isZenMode: isZenMode || isTimeAttack, rows: 8, cols: 8);
+    _isTwistMode = isTwistMode;
+    _levelConfig = LevelGenerator.generate(level, isZenMode: isZenMode || isTimeAttack || isTwistMode, rows: 8, cols: 8);
     _currentGoal = isTimeAttack
         ? const LevelGoal(
             type: LevelGoalType.score,
@@ -60,7 +63,14 @@ class GameViewModel extends ChangeNotifier {
             description: 'Score as much as you can before time runs out!',
             targetValue: 999999,
           )
-        : _levelConfig.goal;
+        : (isTwistMode
+            ? const LevelGoal(
+                type: LevelGoalType.score,
+                title: 'TWIST MODE',
+                description: 'Rotate clockwise to match and relax',
+                targetValue: 999999,
+              )
+            : _levelConfig.goal);
 
     final userProgress = await progressRepository.getProgress();
     final effectiveHighScore = userProgress.levelStars[level.toString()] != null
@@ -73,7 +83,7 @@ class GameViewModel extends ChangeNotifier {
       tiles: initialTiles,
       score: 0,
       highScore: effectiveHighScore,
-      movesLeft: isTimeAttack ? 999 : _levelConfig.moves,
+      movesLeft: (isTimeAttack || isTwistMode || isZenMode) ? 999 : _levelConfig.moves,
       targetScore: _levelConfig.targetScore,
       goal: _currentGoal,
       isGameOver: false,
@@ -89,6 +99,7 @@ class GameViewModel extends ChangeNotifier {
       hintTileIds: const {},
       isShuffling: false,
       isTimeAttack: isTimeAttack,
+      isTwistMode: isTwistMode,
       timeLeft: isTimeAttack ? 60 : 0,
       levelConfig: _levelConfig,
     );
@@ -224,9 +235,11 @@ class GameViewModel extends ChangeNotifier {
       final progress = await progressRepository.getProgress();
       if (!progress.hintsEnabled) return;
 
-      final move = findPossibleMove(_state.tiles, _state.rows, _state.cols);
+      final move = _isTwistMode
+          ? findPossibleTwistMove(_state.tiles, _state.rows, _state.cols)
+          : findPossibleMove(_state.tiles, _state.rows, _state.cols);
       if (move != null) {
-        _state = _state.copyWith(hintTileIds: {move[0].id, move[1].id});
+        _state = _state.copyWith(hintTileIds: move.map((t) => t.id).toSet());
         notifyListeners();
       }
     });
@@ -238,6 +251,105 @@ class GameViewModel extends ChangeNotifier {
       notifyListeners();
     }
     _resetHintTimer();
+  }
+
+  List<TileModel>? findPossibleTwistMove(List<TileModel> tiles, int rows, int cols) {
+    for (int r = 0; r < rows - 1; r++) {
+      for (int c = 0; c < cols - 1; c++) {
+        final tTL = _tileAt(tiles, r, c);
+        final tTR = _tileAt(tiles, r, c + 1);
+        final tBR = _tileAt(tiles, r + 1, c + 1);
+        final tBL = _tileAt(tiles, r + 1, c);
+
+        if (tTL == null || tTR == null || tBR == null || tBL == null) continue;
+        if (!tTL.canSwap || !tTR.canSwap || !tBR.canSwap || !tBL.canSwap) continue;
+
+        var sim = tiles.map((t) {
+          if (t.id == tTL.id) return t.copyWith(row: r, col: c + 1);
+          if (t.id == tTR.id) return t.copyWith(row: r + 1, col: c + 1);
+          if (t.id == tBR.id) return t.copyWith(row: r + 1, col: c);
+          if (t.id == tBL.id) return t.copyWith(row: r, col: c);
+          return t;
+        }).toList();
+        if (_findMatches(sim).isNotEmpty) return [tTL, tTR, tBR, tBL];
+
+        sim = tiles.map((t) {
+          if (t.id == tTL.id) return t.copyWith(row: r + 1, col: c + 1);
+          if (t.id == tTR.id) return t.copyWith(row: r + 1, col: c);
+          if (t.id == tBR.id) return t.copyWith(row: r, col: c);
+          if (t.id == tBL.id) return t.copyWith(row: r, col: c + 1);
+          return t;
+        }).toList();
+        if (_findMatches(sim).isNotEmpty) return [tTL, tTR, tBR, tBL];
+
+        sim = tiles.map((t) {
+          if (t.id == tTL.id) return t.copyWith(row: r + 1, col: c);
+          if (t.id == tTR.id) return t.copyWith(row: r, col: c);
+          if (t.id == tBR.id) return t.copyWith(row: r, col: c + 1);
+          if (t.id == tBL.id) return t.copyWith(row: r + 1, col: c + 1);
+          return t;
+        }).toList();
+        if (_findMatches(sim).isNotEmpty) return [tTL, tTR, tBR, tBL];
+      }
+    }
+    return null;
+  }
+
+  TileModel? _tileAt(List<TileModel> tiles, int r, int c) {
+    for (final t in tiles) {
+      if (t.row == r && t.col == c) return t;
+    }
+    return null;
+  }
+
+  Future<bool> rotateClusterClockwise(int r, int c) async {
+    if (_isProcessing || _state.isGameOver) return false;
+    if (r < 0 || r >= _state.rows - 1 || c < 0 || c >= _state.cols - 1) return false;
+
+    _hintTimer?.cancel();
+    _isProcessing = true;
+    _state = _state.copyWith(hintTileIds: const {});
+
+    try {
+      final tTL = _state.getTile(r, c);
+      final tTR = _state.getTile(r, c + 1);
+      final tBR = _state.getTile(r + 1, c + 1);
+      final tBL = _state.getTile(r + 1, c);
+
+      if (tTL == null || tTR == null || tBR == null || tBL == null) return false;
+      if (!tTL.canSwap || !tTR.canSwap || !tBR.canSwap || !tBL.canSwap) return false;
+
+      final rotatedTiles = _state.tiles.map((tile) {
+        if (tile.id == tTL.id) {
+          return tile.copyWith(row: r, col: c + 1);
+        } else if (tile.id == tTR.id) {
+          return tile.copyWith(row: r + 1, col: c + 1);
+        } else if (tile.id == tBR.id) {
+          return tile.copyWith(row: r + 1, col: c);
+        } else if (tile.id == tBL.id) {
+          return tile.copyWith(row: r, col: c);
+        }
+        return tile;
+      }).toList();
+
+      _state = _state.copyWith(tiles: rotatedTiles, comboCount: 0);
+      _lastSwappedTileIds = {tTL.id, tTR.id, tBR.id, tBL.id};
+      notifyListeners();
+
+      await Future.delayed(const Duration(milliseconds: 260));
+
+      final matches = _findMatches(rotatedTiles);
+      if (matches.isNotEmpty) {
+        await _processMatchesAndCascade();
+      } else {
+        await _checkAndPerformShuffleIfNeeded();
+      }
+      return true;
+    } finally {
+      _lastSwappedTileIds = const {};
+      _isProcessing = false;
+      _resetHintTimer();
+    }
   }
 
   List<TileModel>? findPossibleMove(List<TileModel> tiles, int rows, int cols) {
@@ -286,7 +398,7 @@ class GameViewModel extends ChangeNotifier {
   }
 
   Future<bool> swapTiles(int r1, int c1, int r2, int c2) async {
-    if (_isProcessing || _state.isGameOver) return false;
+    if (_isTwistMode || _isProcessing || _state.isGameOver) return false;
     if (r1 == r2 && c1 == c2) return false;
     _hintTimer?.cancel();
     _isProcessing = true;
@@ -523,9 +635,9 @@ class GameViewModel extends ChangeNotifier {
     }
 
     final isGoalCompleted = _currentGoal.isCompleted;
-    if (!_isZenMode && isGoalCompleted && _state.movesLeft > 0) {
+    if (!_isZenMode && !_isTwistMode && isGoalCompleted && _state.movesLeft > 0) {
       await _triggerSugarCrush();
-    } else if (!_isZenMode && (_state.movesLeft <= 0 || isGoalCompleted)) {
+    } else if (!_isZenMode && !_isTwistMode && (_state.movesLeft <= 0 || isGoalCompleted)) {
       final finalStars = calculateStars(_state.score);
       _state = _state.copyWith(
         isGameOver: true,
@@ -637,7 +749,9 @@ class GameViewModel extends ChangeNotifier {
 
   Future<void> _checkAndPerformShuffleIfNeeded() async {
     if (_state.isGameOver) return;
-    final move = findPossibleMove(_state.tiles, _state.rows, _state.cols);
+    final move = _isTwistMode
+        ? findPossibleTwistMove(_state.tiles, _state.rows, _state.cols)
+        : findPossibleMove(_state.tiles, _state.rows, _state.cols);
     if (move != null) return;
 
     _state = _state.copyWith(isShuffling: true);
@@ -663,7 +777,9 @@ class GameViewModel extends ChangeNotifier {
 
       final existingMatches = _findMatches(candidateTiles);
       if (existingMatches.isEmpty) {
-        final possibleMove = findPossibleMove(candidateTiles, _state.rows, _state.cols);
+        final possibleMove = _isTwistMode
+            ? findPossibleTwistMove(candidateTiles, _state.rows, _state.cols)
+            : findPossibleMove(candidateTiles, _state.rows, _state.cols);
         if (possibleMove != null) {
           _state = _state.copyWith(tiles: candidateTiles, isShuffling: false);
           notifyListeners();

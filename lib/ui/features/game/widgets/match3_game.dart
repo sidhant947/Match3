@@ -19,6 +19,9 @@ class Match3Game extends FlameGame {
   double startY = 0;
   int? selectedRow;
   int? selectedCol;
+  int twistRotatorRow = 3;
+  int twistRotatorCol = 3;
+  TwistRotatorComponent? _rotatorComponent;
 
   double _shakeTimer = 0.0;
   double _shakeIntensity = 0.0;
@@ -35,6 +38,10 @@ class Match3Game extends FlameGame {
     _layoutGrid();
     _syncWithViewModel();
     viewModel.addListener(_syncWithViewModel);
+    if (viewModel.isTwistMode) {
+      _rotatorComponent = TwistRotatorComponent(game: this);
+      add(_rotatorComponent!);
+    }
   }
 
   @override
@@ -202,6 +209,11 @@ class Match3Game extends FlameGame {
     if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
     viewModel.clearHints();
 
+    if (viewModel.isTwistMode) {
+      _handleTwistTap(localPosition);
+      return;
+    }
+
     final col = ((localPosition.dx - startX) / cellSize).floor();
     final row = ((localPosition.dy - startY) / cellSize).floor();
 
@@ -234,7 +246,50 @@ class Match3Game extends FlameGame {
     }
   }
 
+  void handleTwistDrag(Offset localPosition) {
+    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    viewModel.clearHints();
+    final c = ((localPosition.dx - startX) / cellSize - 1).round().clamp(0, viewModel.state.cols - 2);
+    final r = ((localPosition.dy - startY) / cellSize - 1).round().clamp(0, viewModel.state.rows - 2);
+    if (r != twistRotatorRow || c != twistRotatorCol) {
+      twistRotatorRow = r;
+      twistRotatorCol = c;
+      HapticService.selectionClick();
+    }
+  }
+
+  void _handleTwistTap(Offset localPosition) {
+    final currentLeft = startX + twistRotatorCol * cellSize;
+    final currentRight = currentLeft + cellSize * 2;
+    final currentTop = startY + twistRotatorRow * cellSize;
+    final currentBottom = currentTop + cellSize * 2;
+
+    final isInsideCurrent = localPosition.dx >= currentLeft &&
+        localPosition.dx <= currentRight &&
+        localPosition.dy >= currentTop &&
+        localPosition.dy <= currentBottom;
+
+    if (isInsideCurrent) {
+      twistCurrent();
+    } else {
+      final c = ((localPosition.dx - startX) / cellSize - 1).round().clamp(0, viewModel.state.cols - 2);
+      final r = ((localPosition.dy - startY) / cellSize - 1).round().clamp(0, viewModel.state.rows - 2);
+      twistRotatorRow = r;
+      twistRotatorCol = c;
+      HapticService.selectionClick();
+    }
+  }
+
+  void twistCurrent() {
+    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    viewModel.clearHints();
+    _rotatorComponent?.spinAngle = 2 * pi;
+    HapticService.mediumImpact();
+    viewModel.rotateClusterClockwise(twistRotatorRow, twistRotatorCol);
+  }
+
   void handleSwipeAt(Offset startPos, Offset endPos) {
+    if (viewModel.isTwistMode) return;
     if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
     viewModel.clearHints();
 
@@ -707,5 +762,114 @@ class ScorePopupComponent extends PositionComponent {
     );
     tp.layout();
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+  }
+}
+
+class TwistRotatorComponent extends PositionComponent {
+  final Match3Game game;
+  double spinAngle = 0.0;
+
+  TwistRotatorComponent({required this.game}) : super(priority: 10);
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.cellSize <= 0) return;
+    size = Vector2(game.cellSize * 2, game.cellSize * 2);
+    final targetX = game.startX + game.twistRotatorCol * game.cellSize;
+    final targetY = game.startY + game.twistRotatorRow * game.cellSize;
+
+    if (position.x == 0 && position.y == 0) {
+      position = Vector2(targetX, targetY);
+    } else {
+      position.lerp(Vector2(targetX, targetY), 0.35);
+    }
+
+    if (spinAngle > 0) {
+      spinAngle = max(0.0, spinAngle - dt * 14.0);
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (size.x <= 0 || size.y <= 0) return;
+
+    final cell = size.x / 2;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(2, 2, size.x - 4, size.y - 4),
+      const Radius.circular(14),
+    );
+
+    final bgPaint = Paint()
+      ..color = const Color(0xFFFFCE31).withValues(alpha: 0.03)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(rrect, bgPaint);
+
+    final borderPaint = Paint()
+      ..color = const Color(0xFFFFCE31).withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    canvas.drawRRect(rrect, borderPaint);
+
+
+    final hubCenter = Offset(cell, cell);
+    final hubRadius = cell * 0.32;
+
+    canvas.drawCircle(
+      hubCenter,
+      hubRadius + 2,
+      Paint()..color = Colors.black.withValues(alpha: 0.6),
+    );
+
+    final hubBgPaint = Paint()
+      ..color = const Color(0xFF1E1E1E)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(hubCenter, hubRadius, hubBgPaint);
+
+    final hubBorderPaint = Paint()
+      ..color = const Color(0xFFFFCE31)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    canvas.drawCircle(hubCenter, hubRadius, hubBorderPaint);
+
+    canvas.save();
+    canvas.translate(hubCenter.dx, hubCenter.dy);
+    canvas.rotate(-spinAngle);
+
+    final arrowPaint = Paint()
+      ..color = const Color(0xFFFFCE31)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round;
+
+    final arcRadius = hubRadius * 0.58;
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset.zero, radius: arcRadius),
+      -pi * 0.7,
+      pi * 1.45,
+      false,
+      arrowPaint,
+    );
+
+    final endAngle = -pi * 0.7 + pi * 1.45;
+    final tipX = arcRadius * cos(endAngle);
+    final tipY = arcRadius * sin(endAngle);
+
+    final arrowHeadPath = Path()
+      ..moveTo(tipX - 2, tipY - 4)
+      ..lineTo(tipX + 3, tipY)
+      ..lineTo(tipX - 4, tipY + 3);
+
+    canvas.drawPath(
+      arrowHeadPath,
+      Paint()
+        ..color = const Color(0xFFFFCE31)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    canvas.restore();
   }
 }
