@@ -5,9 +5,11 @@ import 'package:match3/domain/models/gem.dart';
 class CustomGemPainter extends CustomPainter {
   const CustomGemPainter({
     required this.gemType,
+    this.emoji,
   });
 
   final GemType gemType;
+  final String? emoji;
 
   static const Map<GemType, String> _fruitEmojis = {
     GemType.circle: '🍎',
@@ -30,10 +32,10 @@ class CustomGemPainter extends CustomPainter {
     final cy = h / 2;
     final r = min(w, h) / 2 * 0.95;
 
-    final emoji = _fruitEmojis[gemType] ?? '🍎';
+    final displayEmoji = emoji ?? _fruitEmojis[gemType] ?? '🍎';
     final tp = TextPainter(
       text: TextSpan(
-        text: emoji,
+        text: displayEmoji,
         style: TextStyle(
           fontSize: r * 1.55,
           fontFamilyFallback: const [
@@ -51,7 +53,7 @@ class CustomGemPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomGemPainter oldDelegate) {
-    return oldDelegate.gemType != gemType;
+    return oldDelegate.gemType != gemType || oldDelegate.emoji != emoji;
   }
 }
 
@@ -59,15 +61,18 @@ class GemWidget extends StatelessWidget {
   const GemWidget({
     super.key,
     required this.gemType,
+    this.emoji,
   });
 
   final GemType gemType;
+  final String? emoji;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: CustomGemPainter(
         gemType: gemType,
+        emoji: emoji,
       ),
     );
   }

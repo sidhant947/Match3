@@ -1,25 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
+import 'package:match3/ui/providers.dart';
 
-class TangibleButton extends StatefulWidget {
+class TangibleButton extends ConsumerStatefulWidget {
   const TangibleButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.isSecondary = false,
     this.height = 56,
+    this.color,
+    this.textColor,
+    this.borderColor,
   });
 
   final String text;
   final VoidCallback? onPressed;
   final bool isSecondary;
   final double height;
+  final Color? color;
+  final Color? textColor;
+  final Color? borderColor;
 
   @override
-  State<TangibleButton> createState() => _TangibleButtonState();
+  ConsumerState<TangibleButton> createState() => _TangibleButtonState();
 }
 
-class _TangibleButtonState extends State<TangibleButton> with SingleTickerProviderStateMixin {
+class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   bool _isPressed = false;
 
@@ -67,14 +75,27 @@ class _TangibleButtonState extends State<TangibleButton> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final isInteractive = widget.onPressed != null;
+    final theme = ref.watch(activeThemeSkinProvider);
 
-    final List<Color> gradientColors = widget.isSecondary
-        ? [const Color(0xFF2E2E2E), const Color(0xFF1E1E1E)]
-        : [const Color(0xFFFFDF6D), const Color(0xFFFFCE31)];
+    final List<Color> gradientColors = widget.color != null
+        ? [widget.color!.withValues(alpha: 0.88), widget.color!]
+        : (widget.isSecondary
+            ? [theme.cardBg, theme.surfaceDark]
+            : [theme.primaryAccent.withValues(alpha: 0.88), theme.primaryAccent]);
 
-    final Color strokeColor = widget.isSecondary
-        ? const Color(0xFF4A4A4A)
-        : const Color(0xFFFFF2A3);
+    final Color strokeColor = widget.borderColor ??
+        (widget.color != null
+            ? widget.color!.withValues(alpha: 0.6)
+            : (widget.isSecondary
+                ? theme.cardBorder
+                : theme.primaryAccent.withValues(alpha: 0.6)));
+
+    final Color effectiveTextColor = widget.textColor ??
+        (widget.color != null
+            ? (widget.color!.computeLuminance() > 0.5 ? const Color(0xFF1A1A1A) : Colors.white)
+            : (widget.isSecondary
+                ? theme.textPrimary
+                : (theme.primaryAccent.computeLuminance() > 0.5 ? const Color(0xFF1A1A1A) : Colors.white)));
 
     return GestureDetector(
       onTapDown: _handleTapDown,
@@ -116,7 +137,7 @@ class _TangibleButtonState extends State<TangibleButton> with SingleTickerProvid
                     widget.text.toUpperCase(),
                     style: TextStyle(
                       fontFamily: 'BebasNeue',
-                      color: widget.isSecondary ? Colors.white : const Color(0xFF1A1A1A),
+                      color: effectiveTextColor,
                       fontSize: 19,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 2.0,

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:match3/domain/models/user_progress.dart';
+import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
+import 'package:match3/ui/features/settings/widgets/custom_emoji_picker.dart';
 import 'package:match3/ui/providers.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
 
-  Widget _backButton(BuildContext context) {
+  Widget _backButton(BuildContext context, AppThemeSkin theme) {
     return GestureDetector(
       onTap: () {
         HapticService.mediumImpact();
@@ -15,22 +18,247 @@ class SettingsView extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF242424),
+          color: theme.cardBg,
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              offset: const Offset(0, 4),
-              blurRadius: 6,
-            ),
-          ],
-          border: Border.all(color: const Color(0xFF383838), width: 1.5),
+          border: Border.all(color: theme.cardBorder, width: 1.5),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 18,
-          color: Colors.white,
+          color: theme.textPrimary,
         ),
+      ),
+    );
+  }
+
+  void _showCustomEmojiPickerSheet(BuildContext context, WidgetRef ref, List<String> currentCustom) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return CustomEmojiPickerSheet(
+          initialEmojis: currentCustom,
+          onSave: (newEmojis) {
+            ref.read(progressRepositoryProvider).setCustomEmojis(newEmojis);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _circularThemeButton({
+    required WidgetRef ref,
+    required AppThemeSkin skin,
+    required bool isSelected,
+    required AppThemeSkin activeTheme,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticService.mediumImpact();
+        ref.read(progressRepositoryProvider).setThemeId(skin.id);
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(right: 14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 58,
+          height: 58,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [skin.bgGradientStart, skin.bgGradientEnd],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: isSelected ? activeTheme.primaryAccent : activeTheme.cardBorder,
+              width: isSelected ? 3.0 : 1.5,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: activeTheme.primaryAccent.withValues(alpha: 0.4),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    )
+                  ]
+                : null,
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: skin.primaryAccent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: skin.cardBg, width: 2),
+                ),
+              ),
+              if (isSelected)
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: activeTheme.primaryAccent.withValues(alpha: 0.15),
+                  ),
+                  child: Icon(
+                    Icons.check_rounded,
+                    color: skin.primaryAccent.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
+                    size: 24,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emojiPresetTile({
+    required String title,
+    required List<String> emojis,
+    required bool isSelected,
+    required AppThemeSkin theme,
+    required VoidCallback onTap,
+    Widget? trailingAction,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticService.lightImpact();
+        onTap();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.primaryAccent.withValues(alpha: 0.12) : theme.cardBg.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? theme.primaryAccent : theme.cardBorder.withValues(alpha: 0.5),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'BebasNeue',
+                      fontSize: 16,
+                      color: isSelected ? theme.primaryAccent : theme.textPrimary,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    emojis.take(6).join(' '),
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
+            ),
+            ?trailingAction,
+            const SizedBox(width: 8),
+            Icon(
+              isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+              color: isSelected ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.5),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionHeader({required String title, required IconData icon, required AppThemeSkin theme}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14, bottom: 10),
+      child: Row(
+        children: [
+          Icon(icon, color: theme.primaryAccent, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'BebasNeue',
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: theme.textPrimary,
+              letterSpacing: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _settingToggleRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required AppThemeSkin theme,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.surfaceDark.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: theme.cardBorder.withValues(alpha: 0.4)),
+            ),
+            child: Icon(
+              icon,
+              color: theme.primaryAccent,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'BebasNeue',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    color: theme.textPrimary,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            activeThumbColor: theme.primaryAccent,
+            activeTrackColor: theme.primaryAccent.withValues(alpha: 0.4),
+            inactiveThumbColor: theme.textSecondary,
+            inactiveTrackColor: theme.surfaceDark,
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
@@ -38,19 +266,24 @@ class SettingsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
+    final theme = ref.watch(activeThemeSkinProvider);
     final progressRepo = ref.read(progressRepositoryProvider);
-    final hintsEnabled = homeState.progress?.hintsEnabled ?? true;
-    final hapticsEnabled = homeState.progress?.hapticsEnabled ?? true;
-    final audioEnabled = homeState.progress?.audioEnabled ?? true;
+    final progress = homeState.progress ?? const UserProgress();
+    final hintsEnabled = progress.hintsEnabled;
+    final hapticsEnabled = progress.hapticsEnabled;
+    final audioEnabled = progress.audioEnabled;
+    final currentPreset = progress.emojiPreset;
+    final customEmojis = progress.customEmojis;
+    final currentThemeId = progress.themeId;
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.2),
+            center: const Alignment(0, -0.2),
             radius: 1.3,
-            colors: [Color(0xFF222222), Color(0xFF161616), Color(0xFF0F0F0F)],
-            stops: [0.0, 0.65, 1.0],
+            colors: [theme.bgGradientStart, theme.bgGradientMiddle, theme.bgGradientEnd],
+            stops: const [0.0, 0.65, 1.0],
           ),
         ),
         child: SafeArea(
@@ -60,8 +293,8 @@ class SettingsView extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    _backButton(context),
-                    const Expanded(
+                    _backButton(context, theme),
+                    Expanded(
                       child: Center(
                         child: Text(
                           'SETTINGS',
@@ -69,9 +302,9 @@ class SettingsView extends ConsumerWidget {
                             fontFamily: 'BebasNeue',
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: theme.textPrimary,
                             letterSpacing: 1.5,
-                            shadows: [
+                            shadows: const [
                               Shadow(
                                 offset: Offset(0, 2),
                                 blurRadius: 4.0,
@@ -86,162 +319,124 @@ class SettingsView extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF222222),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFF383838), width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        offset: const Offset(0, 4),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: Row(
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2E2E2E),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF444444)),
-                        ),
-                        child: const Icon(
-                          Icons.lightbulb_outline_rounded,
-                          color: Color(0xFFFFCE31),
-                          size: 24,
+                      _sectionHeader(
+                        title: 'THEMES & SKINS',
+                        icon: Icons.color_lens_rounded,
+                        theme: theme,
+                      ),
+                      SizedBox(
+                        height: 64,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: AppThemeSkin.allSkins.length,
+                          itemBuilder: (context, idx) {
+                            final skin = AppThemeSkin.allSkins[idx];
+                            return _circularThemeButton(
+                              ref: ref,
+                              skin: skin,
+                              isSelected: currentThemeId == skin.id,
+                              activeTheme: theme,
+                            );
+                          },
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'SHOW HINTS',
-                              style: TextStyle(
-                                fontFamily: 'BebasNeue',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Highlight valid moves after inactivity',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFFB0B0B0),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 8),
+                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
+                      _sectionHeader(
+                        title: 'EMOJI PIECE SET',
+                        icon: Icons.palette_rounded,
+                        theme: theme,
+                      ),
+                      _emojiPresetTile(
+                        title: 'FRUITS',
+                        emojis: UserProgress.presetMap['fruits']!,
+                        isSelected: currentPreset == 'fruits',
+                        theme: theme,
+                        onTap: () => progressRepo.setEmojiPreset('fruits'),
+                      ),
+                      _emojiPresetTile(
+                        title: 'ANIMALS',
+                        emojis: UserProgress.presetMap['animals']!,
+                        isSelected: currentPreset == 'animals',
+                        theme: theme,
+                        onTap: () => progressRepo.setEmojiPreset('animals'),
+                      ),
+                      _emojiPresetTile(
+                        title: 'FACES',
+                        emojis: UserProgress.presetMap['faces']!,
+                        isSelected: currentPreset == 'faces',
+                        theme: theme,
+                        onTap: () => progressRepo.setEmojiPreset('faces'),
+                      ),
+                      _emojiPresetTile(
+                        title: 'SYMBOLS',
+                        emojis: UserProgress.presetMap['symbols']!,
+                        isSelected: currentPreset == 'symbols',
+                        theme: theme,
+                        onTap: () => progressRepo.setEmojiPreset('symbols'),
+                      ),
+                      _emojiPresetTile(
+                        title: 'CUSTOM PALETTE',
+                        emojis: customEmojis,
+                        isSelected: currentPreset == 'custom',
+                        theme: theme,
+                        onTap: () {
+                          progressRepo.setEmojiPreset('custom');
+                          _showCustomEmojiPickerSheet(context, ref, customEmojis);
+                        },
+                        trailingAction: IconButton(
+                          icon: Icon(Icons.tune_rounded, color: theme.primaryAccent, size: 20),
+                          onPressed: () => _showCustomEmojiPickerSheet(context, ref, customEmojis),
                         ),
                       ),
-                      Switch(
+                      const SizedBox(height: 8),
+                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
+                      _sectionHeader(
+                        title: 'PREFERENCES',
+                        icon: Icons.tune_rounded,
+                        theme: theme,
+                      ),
+                      _settingToggleRow(
+                        icon: Icons.lightbulb_outline_rounded,
+                        title: 'SHOW HINTS',
+                        subtitle: 'Highlight valid moves after inactivity',
                         value: hintsEnabled,
-                        activeThumbColor: const Color(0xFFFFCE31),
-                        activeTrackColor: const Color(0xFFFFCE31).withValues(alpha: 0.4),
-                        inactiveThumbColor: const Color(0xFF777777),
-                        inactiveTrackColor: const Color(0xFF333333),
                         onChanged: (val) {
                           HapticService.lightImpact();
                           progressRepo.setHintsEnabled(val);
                         },
+                        theme: theme,
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: _settingTile(
-                  icon: Icons.volume_up_rounded,
-                  title: 'SOUND EFFECTS',
-                  description: 'Play match and combo sounds',
-                  value: audioEnabled,
-                  onChanged: (val) {
-                    HapticService.lightImpact();
-                    progressRepo.setAudioEnabled(val);
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF222222),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFF383838), width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        offset: const Offset(0, 4),
-                        blurRadius: 8,
+                      _settingToggleRow(
+                        icon: Icons.volume_up_rounded,
+                        title: 'SOUND EFFECTS',
+                        subtitle: 'Play match and combo sounds',
+                        value: audioEnabled,
+                        onChanged: (val) {
+                          HapticService.lightImpact();
+                          progressRepo.setAudioEnabled(val);
+                        },
+                        theme: theme,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2E2E2E),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF444444)),
-                        ),
-                        child: const Icon(
-                          Icons.vibration_rounded,
-                          color: Color(0xFFFFCE31),
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'HAPTIC FEEDBACK',
-                              style: TextStyle(
-                                fontFamily: 'BebasNeue',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Vibrate on buttons, swaps and matches',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFFB0B0B0),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
+                      _settingToggleRow(
+                        icon: Icons.vibration_rounded,
+                        title: 'HAPTIC FEEDBACK',
+                        subtitle: 'Vibrate on buttons, swaps and matches',
                         value: hapticsEnabled,
-                        activeThumbColor: const Color(0xFFFFCE31),
-                        activeTrackColor: const Color(0xFFFFCE31).withValues(alpha: 0.4),
-                        inactiveThumbColor: const Color(0xFF777777),
-                        inactiveTrackColor: const Color(0xFF333333),
                         onChanged: (val) {
                           if (val) HapticService.lightImpact();
                           progressRepo.setHapticsEnabled(val);
                         },
+                        theme: theme,
                       ),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -249,65 +444,6 @@ class SettingsView extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _settingTile({required IconData icon, required String title, required String description, required bool value, required ValueChanged<bool> onChanged}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF222222),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF383838), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            offset: const Offset(0, 4),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2E2E2E),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF444444)),
-            ),
-            child: Icon(icon, color: const Color(0xFFFFCE31), size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'BebasNeue',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(description, style: const TextStyle(fontSize: 12, color: Color(0xFFB0B0B0))),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            activeThumbColor: const Color(0xFFFFCE31),
-            activeTrackColor: const Color(0xFFFFCE31).withValues(alpha: 0.4),
-            inactiveThumbColor: const Color(0xFF777777),
-            inactiveTrackColor: const Color(0xFF333333),
-            onChanged: onChanged,
-          ),
-        ],
       ),
     );
   }

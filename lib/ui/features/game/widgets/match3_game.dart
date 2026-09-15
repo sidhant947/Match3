@@ -4,6 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:match3/domain/models/tile_model.dart';
+import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/core/utils/sound_service.dart';
 import 'package:match3/ui/features/game/view_models/game_view_model.dart';
@@ -27,7 +28,9 @@ class Match3Game extends FlameGame {
   double _shakeIntensity = 0.0;
   final Random _random = Random();
 
-  Match3Game({required this.viewModel});
+  AppThemeSkin? themeSkin;
+
+  Match3Game({required this.viewModel, this.themeSkin});
 
   @override
   Color backgroundColor() => Colors.transparent;
@@ -324,18 +327,22 @@ class Match3Game extends FlameGame {
     super.render(canvas);
     if (cellSize <= 0) return;
 
+    final accentColor = themeSkin?.primaryAccent ?? const Color(0xFFFFCE31);
+    final borderColor = themeSkin?.cardBorder ?? Colors.white.withValues(alpha: 0.12);
+    final cellBgColor = themeSkin?.cardBg.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.05);
+
     final cellBgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.05)
+      ..color = cellBgColor
       ..style = PaintingStyle.fill;
     final cellBorderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12)
+      ..color = borderColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     final selectedCellPaint = Paint()
-      ..color = const Color(0xFFFFCE31).withValues(alpha: 0.35)
+      ..color = accentColor.withValues(alpha: 0.35)
       ..style = PaintingStyle.fill;
     final selectedBorderPaint = Paint()
-      ..color = const Color(0xFFFFCE31)
+      ..color = accentColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 

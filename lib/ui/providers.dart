@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:match3/data/repositories/progress_repository.dart';
 import 'package:match3/data/services/hive_service.dart';
+import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/features/game/view_models/game_view_model.dart';
 import 'package:match3/ui/features/home/view_models/home_view_model.dart';
 
@@ -22,6 +23,12 @@ final homeViewModelProvider =
 final gameViewModelProvider = ChangeNotifierProvider.autoDispose<GameViewModel>((ref) {
   final progressRepository = ref.read(progressRepositoryProvider);
   return GameViewModel(progressRepository: progressRepository);
+});
+
+final activeThemeSkinProvider = Provider<AppThemeSkin>((ref) {
+  final homeState = ref.watch(homeViewModelProvider);
+  final themeId = homeState.progress?.themeId ?? 'dark_charcoal';
+  return AppThemeSkin.getSkin(themeId);
 });
 
 

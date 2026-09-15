@@ -21,6 +21,14 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       starsMap = const {};
     }
 
+    final rawCustom = fields[7];
+    final List<String> customList;
+    if (rawCustom is List) {
+      customList = List<String>.from(rawCustom);
+    } else {
+      customList = const ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'];
+    }
+
     return UserProgress(
       currentLevel: fields[0] as int? ?? 1,
       highestLevelCompleted: fields[1] as int? ?? 0,
@@ -28,12 +36,15 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       hintsEnabled: fields[3] as bool? ?? true,
       hapticsEnabled: fields[4] as bool? ?? true,
       audioEnabled: fields[5] as bool? ?? true,
+      emojiPreset: fields[6] as String? ?? 'fruits',
+      customEmojis: customList,
+      themeId: fields[8] as String? ?? 'dark_charcoal',
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProgress obj) {
-    writer.writeByte(6);
+    writer.writeByte(9);
     writer.writeByte(0);
     writer.write(obj.currentLevel);
     writer.writeByte(1);
@@ -46,5 +57,11 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
     writer.write(obj.hapticsEnabled);
     writer.writeByte(5);
     writer.write(obj.audioEnabled);
+    writer.writeByte(6);
+    writer.write(obj.emojiPreset);
+    writer.writeByte(7);
+    writer.write(obj.customEmojis);
+    writer.writeByte(8);
+    writer.write(obj.themeId);
   }
 }

@@ -10,6 +10,7 @@ import 'package:match3/ui/core/widgets/tangible_button.dart';
 import 'package:match3/ui/features/game/views/game_view.dart';
 import 'package:match3/ui/features/level_select/views/level_select_view.dart';
 import 'package:match3/ui/features/settings/views/settings_view.dart';
+import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/providers.dart';
 
 class HomeView extends ConsumerStatefulWidget {
@@ -68,6 +69,7 @@ class _HomeViewState extends ConsumerState<HomeView>
   Widget _circleButton({
     required IconData icon,
     required VoidCallback onTap,
+    required AppThemeSkin theme,
     double iconSize = 20,
     Color? iconColor,
   }) {
@@ -79,28 +81,21 @@ class _HomeViewState extends ConsumerState<HomeView>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF242424),
+          color: theme.cardBg,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withValues(alpha: 0.3),
               offset: const Offset(0, 4),
               blurRadius: 6,
             ),
           ],
-          border: Border.all(color: const Color(0xFF383838), width: 1.5),
+          border: Border.all(color: theme.cardBorder, width: 1.5),
         ),
         child: Icon(
           icon,
           size: iconSize,
-          color: iconColor ?? Colors.white,
-          shadows: const [
-            Shadow(
-              offset: Offset(0, 1.5),
-              blurRadius: 2.0,
-              color: Colors.black54,
-            ),
-          ],
+          color: iconColor ?? theme.textPrimary,
         ),
       ),
     );
@@ -109,15 +104,16 @@ class _HomeViewState extends ConsumerState<HomeView>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(homeViewModelProvider);
+    final theme = ref.watch(activeThemeSkinProvider);
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0, -0.2),
+            center: const Alignment(0, -0.2),
             radius: 1.3,
-            colors: [Color(0xFF222222), Color(0xFF161616), Color(0xFF0F0F0F)],
-            stops: [0.0, 0.65, 1.0],
+            colors: [theme.bgGradientStart, theme.bgGradientMiddle, theme.bgGradientEnd],
+            stops: const [0.0, 0.65, 1.0],
           ),
         ),
         child: SafeArea(
@@ -130,36 +126,29 @@ class _HomeViewState extends ConsumerState<HomeView>
                   children: [
                     _circleButton(
                       icon: Icons.star_rounded,
-                      iconColor: const Color(0xFFFFCE31),
+                      iconColor: theme.primaryAccent,
+                      theme: theme,
                       onTap: () =>
                           _launchUrl('https://github.com/sidhant947/Match3'),
                     ),
                     if (state.progress != null)
                       Text(
                         'LEVEL ${state.progress!.currentLevel}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'BebasNeue',
                           fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 1.5,
-                          shadows: [
-                            Shadow(
-                              offset: Offset(0, 1.5),
-                              blurRadius: 3.0,
-                              color: Colors.black54,
-                            ),
-                          ],
+                          fontWeight: FontWeight.bold,
+                          color: theme.textPrimary,
+                          letterSpacing: 1.2,
                         ),
-                      )
-                    else
-                      const SizedBox.shrink(),
+                      ),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _circleButton(
                           icon: Icons.favorite_rounded,
                           iconColor: const Color(0xFFFF4D4D),
+                          theme: theme,
                           onTap: () => _launchUrl('https://ko-fi.com/sidhant947'),
                         ),
                       ],
@@ -186,9 +175,7 @@ class _HomeViewState extends ConsumerState<HomeView>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(
-                                      0xFFFFD56B,
-                                    ).withValues(alpha: 0.4),
+                                    color: theme.primaryAccent.withValues(alpha: 0.4),
                                     blurRadius: _glowAnimation.value * 1.5,
                                     spreadRadius: _glowAnimation.value / 2,
                                   ),
@@ -199,7 +186,12 @@ class _HomeViewState extends ConsumerState<HomeView>
                         },
                       ),
                       Positioned.fill(
-                        child: GemWidget(gemType: GemType.values[_gemIndex]),
+                        child: GemWidget(
+                          gemType: GemType.values[_gemIndex % GemType.values.length],
+                          emoji: (state.progress?.activeEmojiSet != null && state.progress!.activeEmojiSet.isNotEmpty)
+                              ? state.progress!.activeEmojiSet[_gemIndex % state.progress!.activeEmojiSet.length]
+                              : null,
+                        ),
                       ),
                     ],
                   ),

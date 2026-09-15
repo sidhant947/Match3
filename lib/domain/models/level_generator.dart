@@ -72,7 +72,8 @@ class LevelGenerator {
   static const int chapterSize = 25;
   static const int maxDefinedLevels = 5000;
 
-  static LevelConfig generate(int levelNumber, {bool isZenMode = false, int rows = 8, int cols = 8}) {
+  static LevelConfig generate(int levelNumber, {bool isZenMode = false, int rows = 8, int cols = 8, List<String>? activeFruits}) {
+    final fruits = (activeFruits != null && activeFruits.length >= 4) ? activeFruits : allFruits;
     if (isZenMode) {
       return LevelConfig(
         levelNumber: levelNumber,
@@ -127,7 +128,7 @@ class LevelGenerator {
       fruitCount = (diffType == LevelDifficultyType.boss || diffType == LevelDifficultyType.hard) ? 6 : 5;
     }
 
-    final availableFruits = allFruits.sublist(0, fruitCount.clamp(4, allFruits.length));
+    final availableFruits = fruits.sublist(0, fruitCount.clamp(4, fruits.length));
     final targetFruit = availableFruits[(effectiveLevel - 1) % availableFruits.length];
 
     int baseMoves = 26;

@@ -55,7 +55,15 @@ class GameViewModel extends ChangeNotifier {
     _isZenMode = isZenMode;
     _isTimeAttack = isTimeAttack;
     _isTwistMode = isTwistMode;
-    _levelConfig = LevelGenerator.generate(level, isZenMode: isZenMode || isTimeAttack || isTwistMode, rows: 8, cols: 8);
+
+    final userProgress = await progressRepository.getProgress();
+    _levelConfig = LevelGenerator.generate(
+      level,
+      isZenMode: isZenMode || isTimeAttack || isTwistMode,
+      rows: 8,
+      cols: 8,
+      activeFruits: userProgress.activeEmojiSet,
+    );
     _currentGoal = isTimeAttack
         ? const LevelGoal(
             type: LevelGoalType.score,
@@ -71,8 +79,6 @@ class GameViewModel extends ChangeNotifier {
                 targetValue: 999999,
               )
             : _levelConfig.goal);
-
-    final userProgress = await progressRepository.getProgress();
     final effectiveHighScore = userProgress.levelStars[level.toString()] != null
         ? userProgress.levelStars[level.toString()]! * 1000
         : 0;
@@ -143,8 +149,9 @@ class GameViewModel extends ChangeNotifier {
   }
 
   List<String> _getAvailableFruits(int count) {
-    final clampedCount = count.clamp(4, LevelGenerator.allFruits.length);
-    return LevelGenerator.allFruits.sublist(0, clampedCount);
+    final activeSet = progressRepository.cachedProgress.activeEmojiSet;
+    final clampedCount = count.clamp(4, activeSet.length);
+    return activeSet.sublist(0, clampedCount);
   }
 
   List<TileModel> _generateInitialBoard(int rows, int cols, int fruitCount, [Set<String> frozen = const {}, Set<String> crates = const {}]) {
@@ -595,7 +602,7 @@ class GameViewModel extends ChangeNotifier {
               return tile.copyWith(
                 type: TileType.normal,
                 crateHealth: 0,
-                emoji: LevelGenerator.allFruits[_random.nextInt(4)],
+                emoji: _getAvailableFruits(4)[_random.nextInt(4)],
               );
             } else {
               return tile.copyWith(crateHealth: nextHp);

@@ -10,6 +10,8 @@ class ProgressRepository extends ChangeNotifier {
   final HiveService _hiveService;
   UserProgress? _cachedProgress;
 
+  UserProgress get cachedProgress => _cachedProgress ?? const UserProgress();
+
   Future<UserProgress> getProgress() async {
     if (_cachedProgress != null) return _cachedProgress!;
     _cachedProgress = await _hiveService.getProgress();
@@ -47,6 +49,21 @@ class ProgressRepository extends ChangeNotifier {
   Future<void> setAudioEnabled(bool enabled) async {
     final current = await getProgress();
     await saveProgress(current.copyWith(audioEnabled: enabled));
+  }
+
+  Future<void> setEmojiPreset(String preset) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(emojiPreset: preset));
+  }
+
+  Future<void> setCustomEmojis(List<String> emojis) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(customEmojis: emojis, emojiPreset: 'custom'));
+  }
+
+  Future<void> setThemeId(String themeId) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(themeId: themeId));
   }
 
   Future<void> resetProgress() async {

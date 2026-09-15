@@ -9,6 +9,9 @@ class UserProgress {
     this.hintsEnabled = true,
     this.hapticsEnabled = true,
     this.audioEnabled = true,
+    this.emojiPreset = 'fruits',
+    this.customEmojis = const ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
+    this.themeId = 'dark_charcoal',
   });
 
   final int currentLevel;
@@ -17,6 +20,23 @@ class UserProgress {
   final bool hintsEnabled;
   final bool hapticsEnabled;
   final bool audioEnabled;
+  final String emojiPreset;
+  final List<String> customEmojis;
+  final String themeId;
+
+  static const Map<String, List<String>> presetMap = {
+    'fruits': ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
+    'animals': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯'],
+    'faces': ['😀', '😎', '🥳', '🤩', '🤡', '👽', '🤖', '👻', '🎃', '💩'],
+    'symbols': ['❤️', '⭐', '🔥', '💎', '🍀', '⚡', '🎵', '☀️', '🌙', '🎯'],
+  };
+
+  List<String> get activeEmojiSet {
+    if (emojiPreset == 'custom' && customEmojis.isNotEmpty) {
+      return customEmojis;
+    }
+    return presetMap[emojiPreset] ?? presetMap['fruits']!;
+  }
 
   UserProgress copyWith({
     int? currentLevel,
@@ -25,6 +45,9 @@ class UserProgress {
     bool? hintsEnabled,
     bool? hapticsEnabled,
     bool? audioEnabled,
+    String? emojiPreset,
+    List<String>? customEmojis,
+    String? themeId,
   }) {
     return UserProgress(
       currentLevel: currentLevel ?? this.currentLevel,
@@ -33,6 +56,9 @@ class UserProgress {
       hintsEnabled: hintsEnabled ?? this.hintsEnabled,
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
       audioEnabled: audioEnabled ?? this.audioEnabled,
+      emojiPreset: emojiPreset ?? this.emojiPreset,
+      customEmojis: customEmojis ?? this.customEmojis,
+      themeId: themeId ?? this.themeId,
     );
   }
 

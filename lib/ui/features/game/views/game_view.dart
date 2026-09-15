@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:match3/domain/models/level_generator.dart';
 import 'package:match3/domain/models/level_goal.dart';
+import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/core/widgets/tangible_button.dart';
 import 'package:match3/ui/features/game/view_models/game_view_model.dart';
@@ -57,6 +58,7 @@ class _GameViewState extends ConsumerState<GameView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ref.watch(activeThemeSkinProvider);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -66,221 +68,228 @@ class _GameViewState extends ConsumerState<GameView> {
       },
       child: Scaffold(
         body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.2),
-            radius: 1.3,
-            colors: [
-              Color(0xFF222222),
-              Color(0xFF161616),
-              Color(0xFF0F0F0F),
-            ],
-            stops: [0.0, 0.65, 1.0],
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0, -0.2),
+              radius: 1.3,
+              colors: [
+                theme.bgGradientStart,
+                theme.bgGradientMiddle,
+                theme.bgGradientEnd,
+              ],
+              stops: const [0.0, 0.65, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: ListenableBuilder(
-            listenable: _viewModel,
-            builder: (context, _) {
-              final state = _viewModel.state;
-              final isWin = state.goal.isCompleted;
+          child: SafeArea(
+            child: ListenableBuilder(
+              listenable: _viewModel,
+              builder: (context, _) {
+                final state = _viewModel.state;
+                final isWin = state.goal.isCompleted;
 
-              return Stack(
-                children: [
-                  Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-                        child: Row(
-                          children: [
-                            _circleButton(
-                              icon: Icons.arrow_back_ios_new_rounded,
-                              onTap: _confirmLeave,
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: Text(
-                                  widget.isZenMode
-                                      ? 'ZEN MODE'
-                                      : (widget.isTwistMode
-                                          ? 'TWIST MODE'
-                                          : (widget.isTimeAttack ? 'TIME ATTACK' : 'LEVEL ${state.levelNumber}')),
-                                  style: const TextStyle(
-                                    fontFamily: 'BebasNeue',
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 24,
-                                    letterSpacing: 2.0,
-                                    shadows: [
-                                      Shadow(
-                                        offset: Offset(0, 1.5),
-                                        blurRadius: 3.0,
-                                        color: Colors.black54,
-                                      ),
-                                    ],
+                return Stack(
+                  children: [
+                    Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                          child: Row(
+                            children: [
+                              _circleButton(
+                                icon: Icons.arrow_back_ios_new_rounded,
+                                onTap: _confirmLeave,
+                                theme: theme,
+                              ),
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    widget.isZenMode
+                                        ? 'ZEN MODE'
+                                        : (widget.isTwistMode
+                                            ? 'TWIST MODE'
+                                            : (widget.isTimeAttack ? 'TIME ATTACK' : 'LEVEL ${state.levelNumber}')),
+                                    style: TextStyle(
+                                      fontFamily: 'BebasNeue',
+                                      color: theme.textPrimary,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 24,
+                                      letterSpacing: 2.0,
+                                      shadows: const [
+                                        Shadow(
+                                          offset: Offset(0, 1.5),
+                                          blurRadius: 3.0,
+                                          color: Colors.black54,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            _circleButton(
-                              icon: Icons.refresh_rounded,
-                              onTap: () => _viewModel.initGame(
-                                level: state.levelNumber,
-                                isZenMode: widget.isZenMode,
-                                isTimeAttack: widget.isTimeAttack,
-                                isTwistMode: widget.isTwistMode,
+                              _circleButton(
+                                icon: Icons.refresh_rounded,
+                                onTap: () => _viewModel.initGame(
+                                  level: state.levelNumber,
+                                  isZenMode: widget.isZenMode,
+                                  isTimeAttack: widget.isTimeAttack,
+                                  isTwistMode: widget.isTwistMode,
+                                ),
+                                theme: theme,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      if (!widget.isZenMode && !widget.isTimeAttack && !widget.isTwistMode) ...[
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF222222),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFF383838), width: 1.5),
-                            ),
-                            child: Row(
-                              children: [
-                                if (state.goal.targetFruitEmoji != null) ...[
-                                  Text(
-                                    state.goal.targetFruitEmoji!,
-                                    style: const TextStyle(fontSize: 22),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ] else if (state.goal.type == LevelGoalType.createSpecials) ...[
-                                  const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFFCE31), size: 20),
-                                  const SizedBox(width: 8),
-                                ] else if (state.goal.type == LevelGoalType.comboMaster) ...[
-                                  const Icon(Icons.flash_on_rounded, color: Color(0xFFFF8523), size: 20),
-                                  const SizedBox(width: 8),
-                                ] else if (state.goal.type == LevelGoalType.clearJelly) ...[
-                                  const Icon(Icons.ac_unit_rounded, color: Color(0xFF64D2FF), size: 20),
-                                  const SizedBox(width: 8),
-                                ],
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        state.goal.title,
-                                        style: const TextStyle(
-                                          fontFamily: 'BebasNeue',
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w900,
-                                          color: Color(0xFFFFCE31),
-                                          letterSpacing: 1.0,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: LinearProgressIndicator(
-                                          value: state.goal.progress,
-                                          minHeight: 6,
-                                          backgroundColor: const Color(0xFF161616),
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            state.goal.isCompleted ? const Color(0xFF4ECCA3) : const Color(0xFFFFCE31),
+                        if (!widget.isZenMode && !widget.isTimeAttack && !widget.isTwistMode) ...[
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: theme.cardBg,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: theme.cardBorder, width: 1.5),
+                              ),
+                              child: Row(
+                                children: [
+                                  if (state.goal.targetFruitEmoji != null) ...[
+                                    Text(
+                                      state.goal.targetFruitEmoji!,
+                                      style: const TextStyle(fontSize: 22),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ] else if (state.goal.type == LevelGoalType.createSpecials) ...[
+                                    Icon(Icons.auto_awesome_rounded, color: theme.primaryAccent, size: 20),
+                                    const SizedBox(width: 8),
+                                  ] else if (state.goal.type == LevelGoalType.comboMaster) ...[
+                                    const Icon(Icons.flash_on_rounded, color: Color(0xFFFF8523), size: 20),
+                                    const SizedBox(width: 8),
+                                  ] else if (state.goal.type == LevelGoalType.clearJelly) ...[
+                                    const Icon(Icons.ac_unit_rounded, color: Color(0xFF64D2FF), size: 20),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          state.goal.title,
+                                          style: TextStyle(
+                                            fontFamily: 'BebasNeue',
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w900,
+                                            color: theme.primaryAccent,
+                                            letterSpacing: 1.0,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 2),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: LinearProgressIndicator(
+                                            value: state.goal.progress,
+                                            minHeight: 6,
+                                            backgroundColor: theme.surfaceDark,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              state.goal.isCompleted ? const Color(0xFF4ECCA3) : theme.primaryAccent,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    '${state.goal.currentValue}/${state.goal.targetValue}',
+                                    style: TextStyle(
+                                      fontFamily: 'BebasNeue',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: state.goal.isCompleted ? const Color(0xFF4ECCA3) : theme.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: _buildStatBadge(
+                                    title: 'SCORE',
+                                    value: '${state.score}',
+                                    subValue: '',
+                                    color: theme.primaryAccent,
+                                    theme: theme,
                                   ),
                                 ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  '${state.goal.currentValue}/${state.goal.targetValue}',
-                                  style: TextStyle(
-                                    fontFamily: 'BebasNeue',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                    color: state.goal.isCompleted ? const Color(0xFF4ECCA3) : Colors.white,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildStatBadge(
+                                    title: 'MOVES',
+                                    value: '${state.movesLeft}',
+                                    subValue: '',
+                                    color: state.movesLeft <= 5 ? const Color(0xFFFF4D4D) : theme.textPrimary,
+                                    theme: theme,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: _buildStatBadge(
-                                  title: 'SCORE',
-                                  value: '${state.score}',
-                                  subValue: '',
-                                  color: const Color(0xFFFFCE31),
+                        ],
+                        if (widget.isZenMode || widget.isTwistMode) ...[
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: _buildStatBadge(
+                                    title: 'SCORE',
+                                    value: '${state.score}',
+                                    subValue: '',
+                                    color: theme.primaryAccent,
+                                    theme: theme,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildStatBadge(
-                                  title: 'MOVES',
-                                  value: '${state.movesLeft}',
-                                  subValue: '',
-                                  color: state.movesLeft <= 5 ? const Color(0xFFFF4D4D) : Colors.white,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                      if (widget.isZenMode || widget.isTwistMode) ...[
-                        const SizedBox(height: 6),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: _buildStatBadge(
-                                  title: 'SCORE',
-                                  value: '${state.score}',
-                                  subValue: '',
-                                  color: const Color(0xFFFFCE31),
+                        ],
+                        if (widget.isTimeAttack) ...[
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: _buildStatBadge(
+                                    title: 'SCORE',
+                                    value: '${state.score}',
+                                    subValue: '',
+                                    color: theme.primaryAccent,
+                                    theme: theme,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildStatBadge(
+                                    title: 'TIME LEFT',
+                                    value: '${state.timeLeft}s',
+                                    subValue: '',
+                                    color: state.timeLeft <= 10 ? const Color(0xFFFF4D4D) : theme.primaryAccent,
+                                    theme: theme,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                      if (widget.isTimeAttack) ...[
-                        const SizedBox(height: 6),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: _buildStatBadge(
-                                  title: 'SCORE',
-                                  value: '${state.score}',
-                                  subValue: '',
-                                  color: const Color(0xFFFFCE31),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildStatBadge(
-                                  title: 'TIME LEFT',
-                                  value: '${state.timeLeft}s',
-                                  subValue: '',
-                                  color: state.timeLeft <= 10 ? const Color(0xFFFF4D4D) : const Color(0xFF64D2FF),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
                       Expanded(
                         child: Column(
                           children: [
@@ -353,28 +362,28 @@ class _GameViewState extends ConsumerState<GameView> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF222222),
+                            color: theme.cardBg,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFFFCE31), width: 2),
+                            border: Border.all(color: theme.primaryAccent, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFFCE31).withValues(alpha: 0.3),
+                                color: theme.primaryAccent.withValues(alpha: 0.3),
                                 blurRadius: 16,
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.shuffle_rounded, color: Color(0xFFFFCE31), size: 24),
-                              SizedBox(width: 10),
+                              Icon(Icons.shuffle_rounded, color: theme.primaryAccent, size: 24),
+                              const SizedBox(width: 10),
                               Text(
                                 'NO MOVES! SHUFFLING...',
                                 style: TextStyle(
                                   fontFamily: 'BebasNeue',
                                   fontSize: 22,
                                   fontWeight: FontWeight.w900,
-                                  color: Color(0xFFFFCE31),
+                                  color: theme.primaryAccent,
                                   letterSpacing: 1.5,
                                 ),
                               ),
@@ -397,54 +406,59 @@ class _GameViewState extends ConsumerState<GameView> {
                       starsEarned: state.starsEarned,
                       isWin: widget.isTimeAttack ? true : isWin,
                       currentLevel: state.levelNumber,
+                      theme: theme,
                     ),
                 ],
               );
             },
           ),
         ),
-        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _confirmLeave() async {
     if (!mounted) return;
+    final theme = ref.read(activeThemeSkinProvider);
 
     final shouldLeave = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF242424),
-          title: const Text(
-            'LEAVE GAME?',
-            style: TextStyle(
-              fontFamily: 'BebasNeue',
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: 1.2,
-            ),
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.cardBg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: theme.cardBorder, width: 1.5),
+        ),
+        title: Text(
+          'LEAVE GAME?',
+          style: TextStyle(
+            fontFamily: 'BebasNeue',
+            fontSize: 22,
+            color: theme.textPrimary,
+            letterSpacing: 1.2,
           ),
-          content: const Text(
-            'Your current progress will be lost. Do you really want to leave the playing screen?',
-            style: TextStyle(color: Colors.white70),
+        ),
+        content: Text(
+          'Your progress in this level will be lost.',
+          style: TextStyle(color: theme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('RESUME', style: TextStyle(color: theme.primaryAccent, fontWeight: FontWeight.bold)),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('KEEP PLAYING'),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF4D4D),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text(
-                'LEAVE',
-                style: TextStyle(color: Color(0xFFFF4D4D)),
-              ),
-            ),
-          ],
-        );
-      },
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('LEAVE', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
 
     if (shouldLeave == true && mounted) {
@@ -455,6 +469,7 @@ class _GameViewState extends ConsumerState<GameView> {
   Widget _circleButton({
     required IconData icon,
     required VoidCallback onTap,
+    required AppThemeSkin theme,
     double iconSize = 18,
   }) {
     return GestureDetector(
@@ -465,43 +480,42 @@ class _GameViewState extends ConsumerState<GameView> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFF242424),
+          color: theme.cardBg,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withValues(alpha: 0.3),
               offset: const Offset(0, 4),
               blurRadius: 6,
             ),
           ],
-          border: Border.all(color: const Color(0xFF383838), width: 1.5),
+          border: Border.all(color: theme.cardBorder, width: 1.5),
         ),
         child: Icon(
           icon,
           size: iconSize,
-          color: Colors.white,
+          color: theme.textPrimary,
         ),
       ),
     );
   }
-
-
 
   Widget _buildStatBadge({
     required String title,
     required String value,
     required String subValue,
     required Color color,
+    required AppThemeSkin theme,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF222222),
+        color: theme.cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF383838), width: 1.5),
+        border: Border.all(color: theme.cardBorder, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: 0.2),
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
@@ -513,11 +527,11 @@ class _GameViewState extends ConsumerState<GameView> {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'BebasNeue',
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFB0B0B0),
+              color: theme.textSecondary,
               letterSpacing: 1.0,
             ),
           ),
@@ -538,11 +552,11 @@ class _GameViewState extends ConsumerState<GameView> {
               if (subValue.isNotEmpty)
                 Text(
                   subValue,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'BebasNeue',
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF888888),
+                    color: theme.textSecondary,
                   ),
                 ),
             ],
@@ -559,6 +573,7 @@ class _GameViewState extends ConsumerState<GameView> {
     required int starsEarned,
     required bool isWin,
     required int currentLevel,
+    required AppThemeSkin theme,
   }) {
     final config = _viewModel.state.levelConfig;
     final reward = config?.reward;
@@ -572,19 +587,19 @@ class _GameViewState extends ConsumerState<GameView> {
           child: Container(
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF252525), Color(0xFF191919)],
+              gradient: LinearGradient(
+                colors: [theme.cardBg, theme.surfaceDark],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isWin ? const Color(0xFFFFCE31) : const Color(0xFFFF4D4D),
+                color: isWin ? theme.primaryAccent : const Color(0xFFFF4D4D),
                 width: 3.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: Colors.black.withValues(alpha: 0.5),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
@@ -603,7 +618,7 @@ class _GameViewState extends ConsumerState<GameView> {
                         child: Icon(
                           Icons.star_rounded,
                           size: 44,
-                          color: earned ? const Color(0xFFFFCE31) : Colors.white24,
+                          color: earned ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
                         ),
                       );
                     }),
@@ -626,13 +641,13 @@ class _GameViewState extends ConsumerState<GameView> {
                 ],
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'BebasNeue',
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: theme.textPrimary,
                     letterSpacing: 1.5,
-                    shadows: [
+                    shadows: const [
                       Shadow(
                         offset: Offset(0, 2),
                         blurRadius: 4.0,
@@ -645,9 +660,9 @@ class _GameViewState extends ConsumerState<GameView> {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFFB0B0B0),
+                    color: theme.textSecondary,
                   ),
                 ),
                 if (hasSpecialReward) ...[
@@ -655,9 +670,9 @@ class _GameViewState extends ConsumerState<GameView> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF332A15),
+                      color: theme.surfaceDark,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFFCE31), width: 1.2),
+                      border: Border.all(color: theme.primaryAccent, width: 1.2),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -669,16 +684,16 @@ class _GameViewState extends ConsumerState<GameView> {
                           children: [
                             Text(
                               reward.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'BebasNeue',
                                 fontSize: 16,
-                                color: Color(0xFFFFCE31),
+                                color: theme.primaryAccent,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               reward.description,
-                              style: const TextStyle(fontSize: 11, color: Colors.white70),
+                              style: TextStyle(fontSize: 11, color: theme.textSecondary),
                             ),
                           ],
                         ),
@@ -690,17 +705,17 @@ class _GameViewState extends ConsumerState<GameView> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2A2A2A),
+                    color: theme.surfaceDark,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF444444)),
+                    border: Border.all(color: theme.cardBorder),
                   ),
                   child: Text(
                     'FINAL SCORE: $score',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'BebasNeue',
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFCE31),
+                      color: theme.primaryAccent,
                       letterSpacing: 1.0,
                     ),
                   ),
