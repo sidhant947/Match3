@@ -350,3 +350,226 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
     );
   }
 }
+
+class SingleEmojiPickerSheet extends ConsumerStatefulWidget {
+  final String title;
+  final String initialEmoji;
+  final ValueChanged<String> onSave;
+
+  const SingleEmojiPickerSheet({
+    super.key,
+    required this.title,
+    required this.initialEmoji,
+    required this.onSave,
+  });
+
+  @override
+  ConsumerState<SingleEmojiPickerSheet> createState() => _SingleEmojiPickerSheetState();
+}
+
+class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet> with SingleTickerProviderStateMixin {
+  late String _selectedEmoji;
+  late TabController _tabController;
+  final TextEditingController _directInputController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedEmoji = widget.initialEmoji;
+    _tabController = TabController(length: _CustomEmojiPickerSheetState._categories.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _directInputController.dispose();
+    super.dispose();
+  }
+
+  void _selectEmoji(String emoji) {
+    HapticService.selectionClick();
+    setState(() {
+      _selectedEmoji = emoji;
+    });
+  }
+
+  void _applyDirectInput() {
+    final text = _directInputController.text.trim();
+    if (text.isNotEmpty) {
+      final chars = text.characters.where((c) => c.trim().isNotEmpty).toList();
+      if (chars.isNotEmpty) {
+        _selectEmoji(chars.first);
+        _directInputController.clear();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ref.watch(activeThemeSkinProvider);
+    final isAccentLight = theme.primaryAccent.computeLuminance() > 0.5;
+    final accentBtnTextColor = isAccentLight ? const Color(0xFF1A1A1A) : Colors.white;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.78,
+      decoration: BoxDecoration(
+        color: theme.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: theme.cardBorder, width: 1.5)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 10, bottom: 6),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.cardBorder,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontFamily: 'BebasNeue',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: theme.textPrimary,
+                    letterSpacing: 1.3,
+                  ),
+                ),
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: theme.primaryAccent.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.primaryAccent),
+                  ),
+                  child: Text(_selectedEmoji, style: const TextStyle(fontSize: 26)),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 40,
+                    child: TextField(
+                      controller: _directInputController,
+                      style: TextStyle(color: theme.textPrimary, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Paste custom emoji...',
+                        hintStyle: TextStyle(color: theme.textSecondary.withValues(alpha: 0.6), fontSize: 13),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        filled: true,
+                        fillColor: theme.surfaceDark,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.cardBorder)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.cardBorder)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.primaryAccent)),
+                      ),
+                      onSubmitted: (_) => _applyDirectInput(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.primaryAccent,
+                    foregroundColor: accentBtnTextColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: _applyDirectInput,
+                  child: const Text('SET', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+          TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: theme.primaryAccent,
+            labelColor: theme.primaryAccent,
+            unselectedLabelColor: theme.textSecondary,
+            tabs: _CustomEmojiPickerSheetState._categories.keys.map((cat) => Tab(text: cat)).toList(),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: _CustomEmojiPickerSheetState._categories.values.map((emojiList) {
+                return GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: emojiList.length,
+                  itemBuilder: (context, idx) {
+                    final emoji = emojiList[idx];
+                    return InkWell(
+                      onTap: () => _selectEmoji(emoji),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: theme.surfaceDark,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: emoji == _selectedEmoji ? theme.primaryAccent : theme.cardBorder),
+                        ),
+                        child: Center(
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryAccent,
+                  foregroundColor: accentBtnTextColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 4,
+                ),
+                onPressed: () {
+                  HapticService.mediumImpact();
+                  widget.onSave(_selectedEmoji);
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  'SAVE EMOJI',
+                  style: TextStyle(
+                    fontFamily: 'BebasNeue',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -12,6 +12,9 @@ class UserProgress {
     this.emojiPreset = 'fruits',
     this.customEmojis = const ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
     this.themeId = 'dark_charcoal',
+    this.twistLimiterEnabled = false,
+    this.crateEmoji = '📦',
+    this.colorBombEmoji = '🍭',
   });
 
   final int currentLevel;
@@ -23,6 +26,9 @@ class UserProgress {
   final String emojiPreset;
   final List<String> customEmojis;
   final String themeId;
+  final bool twistLimiterEnabled;
+  final String crateEmoji;
+  final String colorBombEmoji;
 
   static const Map<String, List<String>> presetMap = {
     'fruits': ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
@@ -48,6 +54,9 @@ class UserProgress {
     String? emojiPreset,
     List<String>? customEmojis,
     String? themeId,
+    bool? twistLimiterEnabled,
+    String? crateEmoji,
+    String? colorBombEmoji,
   }) {
     return UserProgress(
       currentLevel: currentLevel ?? this.currentLevel,
@@ -59,6 +68,9 @@ class UserProgress {
       emojiPreset: emojiPreset ?? this.emojiPreset,
       customEmojis: customEmojis ?? this.customEmojis,
       themeId: themeId ?? this.themeId,
+      twistLimiterEnabled: twistLimiterEnabled ?? this.twistLimiterEnabled,
+      crateEmoji: crateEmoji ?? this.crateEmoji,
+      colorBombEmoji: colorBombEmoji ?? this.colorBombEmoji,
     );
   }
 

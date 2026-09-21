@@ -47,6 +47,21 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
+  void _showSingleEmojiPickerSheet(BuildContext context, WidgetRef ref, String title, String currentEmoji, ValueChanged<String> onSave) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SingleEmojiPickerSheet(
+          title: title,
+          initialEmoji: currentEmoji,
+          onSave: onSave,
+        );
+      },
+    );
+  }
+
   Widget _circularThemeButton({
     required WidgetRef ref,
     required AppThemeSkin skin,
@@ -272,6 +287,9 @@ class SettingsView extends ConsumerWidget {
     final hintsEnabled = progress.hintsEnabled;
     final hapticsEnabled = progress.hapticsEnabled;
     final audioEnabled = progress.audioEnabled;
+    final twistLimiterEnabled = progress.twistLimiterEnabled;
+    final crateEmoji = progress.crateEmoji;
+    final colorBombEmoji = progress.colorBombEmoji;
     final currentPreset = progress.emojiPreset;
     final customEmojis = progress.customEmojis;
     final currentThemeId = progress.themeId;
@@ -399,6 +417,59 @@ class SettingsView extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
                       _sectionHeader(
+                        title: 'SPECIAL TILES',
+                        icon: Icons.auto_awesome_rounded,
+                        theme: theme,
+                      ),
+                      _emojiPresetTile(
+                        title: 'STORAGE BOX',
+                        emojis: [crateEmoji],
+                        isSelected: false,
+                        theme: theme,
+                        onTap: () => _showSingleEmojiPickerSheet(
+                          context,
+                          ref,
+                          'STORAGE BOX EMOJI',
+                          crateEmoji,
+                          (emoji) => progressRepo.setCrateEmoji(emoji),
+                        ),
+                        trailingAction: IconButton(
+                          icon: Icon(Icons.edit_rounded, color: theme.primaryAccent, size: 20),
+                          onPressed: () => _showSingleEmojiPickerSheet(
+                            context,
+                            ref,
+                            'STORAGE BOX EMOJI',
+                            crateEmoji,
+                            (emoji) => progressRepo.setCrateEmoji(emoji),
+                          ),
+                        ),
+                      ),
+                      _emojiPresetTile(
+                        title: '5-MATCH CANDY',
+                        emojis: [colorBombEmoji],
+                        isSelected: false,
+                        theme: theme,
+                        onTap: () => _showSingleEmojiPickerSheet(
+                          context,
+                          ref,
+                          '5-MATCH CANDY EMOJI',
+                          colorBombEmoji,
+                          (emoji) => progressRepo.setColorBombEmoji(emoji),
+                        ),
+                        trailingAction: IconButton(
+                          icon: Icon(Icons.edit_rounded, color: theme.primaryAccent, size: 20),
+                          onPressed: () => _showSingleEmojiPickerSheet(
+                            context,
+                            ref,
+                            '5-MATCH CANDY EMOJI',
+                            colorBombEmoji,
+                            (emoji) => progressRepo.setColorBombEmoji(emoji),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
+                      _sectionHeader(
                         title: 'PREFERENCES',
                         icon: Icons.tune_rounded,
                         theme: theme,
@@ -433,6 +504,17 @@ class SettingsView extends ConsumerWidget {
                         onChanged: (val) {
                           if (val) HapticService.lightImpact();
                           progressRepo.setHapticsEnabled(val);
+                        },
+                        theme: theme,
+                      ),
+                      _settingToggleRow(
+                        icon: Icons.rotate_right_rounded,
+                        title: 'TWIST LIMITER',
+                        subtitle: 'Revert twist if no match is formed',
+                        value: twistLimiterEnabled,
+                        onChanged: (val) {
+                          if (val) HapticService.lightImpact();
+                          progressRepo.setTwistLimiterEnabled(val);
                         },
                         theme: theme,
                       ),

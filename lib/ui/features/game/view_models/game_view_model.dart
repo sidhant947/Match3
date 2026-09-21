@@ -165,7 +165,7 @@ class GameViewModel extends ChangeNotifier {
             id: '${DateTime.now().microsecondsSinceEpoch}_${r}_${c}_${_random.nextInt(1000)}',
             row: r,
             col: c,
-            emoji: '📦',
+            emoji: progressRepository.cachedProgress.crateEmoji,
             type: TileType.crate,
             crateHealth: 2,
           ));
@@ -349,6 +349,19 @@ class GameViewModel extends ChangeNotifier {
       if (matches.isNotEmpty) {
         await _processMatchesAndCascade();
       } else {
+        if (progressRepository.cachedProgress.twistLimiterEnabled) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          final revertedTiles = _state.tiles.map((tile) {
+            if (tile.id == tTL.id) return tile.copyWith(row: r, col: c);
+            if (tile.id == tTR.id) return tile.copyWith(row: r, col: c + 1);
+            if (tile.id == tBR.id) return tile.copyWith(row: r + 1, col: c + 1);
+            if (tile.id == tBL.id) return tile.copyWith(row: r + 1, col: c);
+            return tile;
+          }).toList();
+          _state = _state.copyWith(tiles: revertedTiles);
+          notifyListeners();
+          return false;
+        }
         await _checkAndPerformShuffleIfNeeded();
       }
       return true;
@@ -564,7 +577,7 @@ class GameViewModel extends ChangeNotifier {
           final type = scanResult.specials[tile.id]!;
           return tile.copyWith(
             type: type,
-            emoji: type == TileType.colorBomb ? '🍭' : tile.emoji,
+            emoji: type == TileType.colorBomb ? progressRepository.cachedProgress.colorBombEmoji : tile.emoji,
           );
         }
         return tile;

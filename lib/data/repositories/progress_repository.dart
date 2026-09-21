@@ -66,6 +66,21 @@ class ProgressRepository extends ChangeNotifier {
     await saveProgress(current.copyWith(themeId: themeId));
   }
 
+  Future<void> setTwistLimiterEnabled(bool enabled) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(twistLimiterEnabled: enabled));
+  }
+
+  Future<void> setCrateEmoji(String emoji) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(crateEmoji: emoji));
+  }
+
+  Future<void> setColorBombEmoji(String emoji) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(colorBombEmoji: emoji));
+  }
+
   Future<void> resetProgress() async {
     _cachedProgress = const UserProgress();
     await saveProgress(_cachedProgress!);

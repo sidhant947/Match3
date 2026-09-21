@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:match3/domain/models/tile_model.dart';
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
@@ -146,8 +145,12 @@ class Match3Game extends FlameGame {
       }
     }
 
-    if (toRemove.isNotEmpty && SoundService.enabled) {
-      FlameAudio.play(hasSpecialMatch ? 'combo_special.mp3' : 'combo.mp3');
+    if (toRemove.isNotEmpty) {
+      if (hasSpecialMatch) {
+        SoundService.playSpecialCombo();
+      } else {
+        SoundService.playCombo();
+      }
     }
     _knownSpecialIds
       ..clear()

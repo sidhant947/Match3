@@ -39,12 +39,15 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       emojiPreset: fields[6] as String? ?? 'fruits',
       customEmojis: customList,
       themeId: fields[8] as String? ?? 'dark_charcoal',
+      twistLimiterEnabled: fields[9] as bool? ?? false,
+      crateEmoji: fields[10] as String? ?? '📦',
+      colorBombEmoji: fields[11] as String? ?? '🍭',
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProgress obj) {
-    writer.writeByte(9);
+    writer.writeByte(12);
     writer.writeByte(0);
     writer.write(obj.currentLevel);
     writer.writeByte(1);
@@ -63,5 +66,11 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
     writer.write(obj.customEmojis);
     writer.writeByte(8);
     writer.write(obj.themeId);
+    writer.writeByte(9);
+    writer.write(obj.twistLimiterEnabled);
+    writer.writeByte(10);
+    writer.write(obj.crateEmoji);
+    writer.writeByte(11);
+    writer.write(obj.colorBombEmoji);
   }
 }

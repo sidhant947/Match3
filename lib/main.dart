@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:match3/data/services/hive_service.dart';
 import 'package:match3/ui/core/theme/app_theme.dart';
 import 'package:match3/ui/providers.dart';
+import 'package:match3/ui/core/utils/sound_service.dart';
 import 'package:match3/ui/features/home/views/home_view.dart';
 
 void main() async {
@@ -12,6 +13,7 @@ void main() async {
 
   final hiveService = HiveService();
   await hiveService.init();
+  await SoundService.init();
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,

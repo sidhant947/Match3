@@ -2,6 +2,8 @@
 
 An elegant, minimal, and open-source Match-3 puzzle game built using Flutter. This game is designed for players who want a pure, privacy-respecting, and uninterrupted gaming experience.
 
+[![AI-DECLARATION: copilot](https://img.shields.io/badge/䷼%20AI--DECLARATION-copilot-fee2e2?labelColor=fee2e2)](AI-DECLARATION.md)
+
 ## Features & Key Perks
 
 - **100% Privacy Focused**: No user data collection, no telemetry, and no registration required.
@@ -10,6 +12,6 @@ An elegant, minimal, and open-source Match-3 puzzle game built using Flutter. Th
 - **Completely Offline**: Fully functional offline. Ideal for commutes, travel, or areas with low connectivity.
 - **Infinite Levels**: Endless puzzle challenges with procedurally generated configurations.
 
-
 ## License
+
 Licensed under the GNU General Public License v3.0 (GPL-3.0).
