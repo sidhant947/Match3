@@ -107,7 +107,11 @@ class _GameViewState extends ConsumerState<GameView> {
                                         ? 'ZEN MODE'
                                         : (widget.isTwistMode
                                             ? 'TWIST MODE'
-                                            : (widget.isTimeAttack ? 'TIME ATTACK' : 'LEVEL ${state.levelNumber}')),
+                                            : (widget.isTimeAttack
+                                                ? 'TIME ATTACK'
+                                                : ((state.levelConfig?.isTimed ?? false)
+                                                    ? 'CHALLENGE ${state.levelNumber}'
+                                                    : 'LEVEL ${state.levelNumber}'))),
                                     style: TextStyle(
                                       fontFamily: 'BebasNeue',
                                       color: theme.textPrimary,
@@ -228,13 +232,21 @@ class _GameViewState extends ConsumerState<GameView> {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
-                                  child: _buildStatBadge(
-                                    title: 'MOVES',
-                                    value: '${state.movesLeft}',
-                                    subValue: '',
-                                    color: state.movesLeft <= 5 ? const Color(0xFFFF4D4D) : theme.textPrimary,
-                                    theme: theme,
-                                  ),
+                                  child: (state.levelConfig?.isTimed ?? false)
+                                      ? _buildStatBadge(
+                                          title: 'TIME LEFT',
+                                          value: '${state.timeLeft}s',
+                                          subValue: '',
+                                          color: state.timeLeft <= 10 ? const Color(0xFFFF4D4D) : theme.primaryAccent,
+                                          theme: theme,
+                                        )
+                                      : _buildStatBadge(
+                                          title: 'MOVES',
+                                          value: '${state.movesLeft}',
+                                          subValue: '',
+                                          color: state.movesLeft <= 5 ? const Color(0xFFFF4D4D) : theme.textPrimary,
+                                          theme: theme,
+                                        ),
                                 ),
                               ],
                             ),
@@ -396,12 +408,16 @@ class _GameViewState extends ConsumerState<GameView> {
                     _buildOverlay(
                       title: widget.isTimeAttack
                           ? "TIME'S UP!"
-                          : (isWin ? 'LEVEL COMPLETE!' : 'OUT OF MOVES!'),
+                          : (isWin
+                              ? 'LEVEL COMPLETE!'
+                              : ((state.levelConfig?.isTimed ?? false) ? "TIME'S UP!" : 'OUT OF MOVES!')),
                       message: widget.isTimeAttack
                           ? 'Great run! Can you beat your score?'
                           : (isWin
                               ? 'Target reached with great combos!'
-                              : 'Give it another shot to clear this level.'),
+                              : ((state.levelConfig?.isTimed ?? false)
+                                  ? 'Time ran out! Try again.'
+                                  : 'Give it another shot to clear this level.')),
                       score: state.score,
                       starsEarned: state.starsEarned,
                       isWin: widget.isTimeAttack ? true : isWin,

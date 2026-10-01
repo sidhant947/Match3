@@ -89,7 +89,7 @@ class GameViewModel extends ChangeNotifier {
       tiles: initialTiles,
       score: 0,
       highScore: effectiveHighScore,
-      movesLeft: (isTimeAttack || isTwistMode || isZenMode) ? 999 : _levelConfig.moves,
+      movesLeft: (isTimeAttack || isTwistMode || isZenMode || _levelConfig.isTimed) ? 999 : _levelConfig.moves,
       targetScore: _levelConfig.targetScore,
       goal: _currentGoal,
       isGameOver: false,
@@ -106,14 +106,14 @@ class GameViewModel extends ChangeNotifier {
       isShuffling: false,
       isTimeAttack: isTimeAttack,
       isTwistMode: isTwistMode,
-      timeLeft: isTimeAttack ? 60 : 0,
+      timeLeft: isTimeAttack ? 60 : (_levelConfig.timeLimit ?? 0),
       levelConfig: _levelConfig,
     );
     _isProcessing = false;
     notifyListeners();
     _resetHintTimer();
 
-    if (isTimeAttack) {
+    if (isTimeAttack || _levelConfig.isTimed) {
       _startTimeAttackTimer();
     }
   }
@@ -128,11 +128,19 @@ class GameViewModel extends ChangeNotifier {
       final newTime = _state.timeLeft - 1;
       if (newTime <= 0) {
         timer.cancel();
+        final isWin = !_isTimeAttack && _currentGoal.isCompleted;
+        final stars = isWin ? calculateStars(_state.score) : (_isTimeAttack ? calculateStars(_state.score) : 0);
         _state = _state.copyWith(
           timeLeft: 0,
           isGameOver: true,
-          starsEarned: calculateStars(_state.score),
+          starsEarned: stars,
         );
+        if (isWin) {
+          progressRepository.completeLevel(
+            _state.levelNumber,
+            stars,
+          );
+        }
         notifyListeners();
       } else {
         _state = _state.copyWith(timeLeft: newTime);
@@ -444,7 +452,7 @@ class GameViewModel extends ChangeNotifier {
       notifyListeners();
 
       if (_isSpecialCombination(tile1, tile2)) {
-        final newMoves = (_isZenMode || _isTimeAttack) ? _state.movesLeft : _state.movesLeft - 1;
+        final newMoves = (_isZenMode || _isTimeAttack || _levelConfig.isTimed) ? _state.movesLeft : _state.movesLeft - 1;
         _state = _state.copyWith(movesLeft: newMoves);
         await _handleSpecialCombination(tile1.copyWith(row: r2, col: c2), tile2.copyWith(row: r1, col: c1));
         return true;
@@ -465,7 +473,7 @@ class GameViewModel extends ChangeNotifier {
         return false;
       }
 
-      final newMoves = (_isZenMode || _isTimeAttack) ? _state.movesLeft : _state.movesLeft - 1;
+      final newMoves = (_isZenMode || _isTimeAttack || _levelConfig.isTimed) ? _state.movesLeft : _state.movesLeft - 1;
       _state = _state.copyWith(movesLeft: newMoves, comboCount: 0);
       _lastSwappedTileIds = {tile1.id, tile2.id};
       notifyListeners();
@@ -655,10 +663,11 @@ class GameViewModel extends ChangeNotifier {
     }
 
     final isGoalCompleted = _currentGoal.isCompleted;
-    if (!_isZenMode && !_isTwistMode && isGoalCompleted && _state.movesLeft > 0) {
+    if (!_isZenMode && !_isTwistMode && !_levelConfig.isTimed && isGoalCompleted && _state.movesLeft > 0) {
       await _triggerSugarCrush();
-    } else if (!_isZenMode && !_isTwistMode && (_state.movesLeft <= 0 || isGoalCompleted)) {
-      final finalStars = calculateStars(_state.score);
+    } else if (!_isZenMode && !_isTwistMode && ((_levelConfig.isTimed ? _state.timeLeft <= 0 : _state.movesLeft <= 0) || isGoalCompleted)) {
+      _timeAttackTimer?.cancel();
+      final finalStars = isGoalCompleted ? calculateStars(_state.score) : 0;
       _state = _state.copyWith(
         isGameOver: true,
         starsEarned: finalStars,

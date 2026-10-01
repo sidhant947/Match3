@@ -13,6 +13,7 @@ class TangibleButton extends ConsumerStatefulWidget {
     this.color,
     this.textColor,
     this.borderColor,
+    this.icon,
   });
 
   final String text;
@@ -22,6 +23,7 @@ class TangibleButton extends ConsumerStatefulWidget {
   final Color? color;
   final Color? textColor;
   final Color? borderColor;
+  final IconData? icon;
 
   @override
   ConsumerState<TangibleButton> createState() => _TangibleButtonState();
@@ -133,24 +135,38 @@ class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTick
                 alignment: Alignment.center,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(
-                    widget.text.toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: 'BebasNeue',
-                      color: effectiveTextColor,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2.0,
-                      shadows: widget.isSecondary
-                          ? const [
-                              Shadow(
-                                offset: Offset(0, 1.5),
-                                blurRadius: 2.0,
-                                color: Colors.black54,
-                              ),
-                            ]
-                          : null,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (widget.icon != null) ...[
+                        Icon(
+                          widget.icon,
+                          color: effectiveTextColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        widget.text.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'BebasNeue',
+                          color: effectiveTextColor,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.0,
+                          shadows: widget.isSecondary
+                              ? const [
+                                  Shadow(
+                                    offset: Offset(0, 1.5),
+                                    blurRadius: 2.0,
+                                    color: Colors.black54,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

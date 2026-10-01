@@ -47,6 +47,9 @@ class LevelConfig {
   final Set<String> frozenTiles;
   final Set<String> crateTiles;
   final MilestoneReward reward;
+  final int? timeLimit;
+
+  bool get isTimed => timeLimit != null && timeLimit! > 0;
 
   const LevelConfig({
     required this.levelNumber,
@@ -64,6 +67,7 @@ class LevelConfig {
     this.frozenTiles = const {},
     this.crateTiles = const {},
     required this.reward,
+    this.timeLimit,
   });
 }
 
@@ -169,6 +173,8 @@ class LevelGenerator {
     final int star3 = (targetScore * 1.45).round();
 
     final MilestoneReward reward = _generateReward(levelNumber, effectiveLevel, prestigeRank, diffType);
+    final bool isTimed = !isZenMode && levelNumber % 5 == 0;
+    final int? timeLimit = isTimed ? 60 : null;
 
     return LevelConfig(
       levelNumber: levelNumber,
@@ -176,7 +182,7 @@ class LevelGenerator {
       prestigeRank: prestigeRank,
       difficultyType: diffType,
       goal: goal,
-      moves: moves,
+      moves: isTimed ? 999 : moves,
       targetScore: targetScore,
       star1Score: star1,
       star2Score: star2,
@@ -186,6 +192,7 @@ class LevelGenerator {
       frozenTiles: frozen,
       crateTiles: crates,
       reward: reward,
+      timeLimit: timeLimit,
     );
   }
 

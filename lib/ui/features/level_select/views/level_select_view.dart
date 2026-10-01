@@ -196,40 +196,57 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
         borderColor = theme.primaryAccent.withValues(alpha: 0.7);
       }
 
-      content = Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      content = Stack(
+        alignment: Alignment.center,
         children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              '$levelNumber',
-              style: TextStyle(
-                fontFamily: 'BebasNeue',
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: theme.textPrimary,
-                shadows: const [
-                  Shadow(
-                    offset: Offset(0, 1.5),
-                    blurRadius: 2.0,
-                    color: Colors.black45,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 2),
-          Row(
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(3, (starIdx) {
-              final active = starIdx < stars;
-              return Icon(
-                active ? Icons.star_rounded : Icons.star_border_rounded,
-                size: 13,
-                color: active ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
-              );
-            }),
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$levelNumber',
+                  style: TextStyle(
+                    fontFamily: 'BebasNeue',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: theme.textPrimary,
+                    shadows: const [
+                      Shadow(
+                        offset: Offset(0, 1.5),
+                        blurRadius: 2.0,
+                        color: Colors.black45,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(3, (starIdx) {
+                  final active = starIdx < stars;
+                  return Icon(
+                    active ? Icons.star_rounded : Icons.star_border_rounded,
+                    size: 13,
+                    color: active ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
+                  );
+                }),
+              ),
+            ],
           ),
+          if (isBoss)
+            const Positioned(
+              top: 2,
+              right: 2,
+              child: Text('👑', style: TextStyle(fontSize: 10)),
+            )
+          else if (levelNumber % 5 == 0)
+            const Positioned(
+              top: 2,
+              right: 2,
+              child: Text('⏱️', style: TextStyle(fontSize: 10)),
+            ),
         ],
       );
     } else if (isCurrent) {
@@ -264,6 +281,12 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               top: 2,
               right: 2,
               child: Text('👑', style: TextStyle(fontSize: 10)),
+            )
+          else if (levelNumber % 5 == 0)
+            const Positioned(
+              top: 2,
+              right: 2,
+              child: Text('⏱️', style: TextStyle(fontSize: 10)),
             ),
         ],
       );
@@ -271,9 +294,15 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
       gradientColors = [theme.cardBg, theme.surfaceDark];
       borderColor = isBoss ? theme.primaryAccent.withValues(alpha: 0.5) : theme.cardBorder;
       content = Icon(
-        isBoss ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded,
+        isBoss
+            ? Icons.workspace_premium_rounded
+            : (levelNumber % 5 == 0 ? Icons.timer_outlined : Icons.lock_outline_rounded),
         size: 20,
-        color: isBoss ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.5),
+        color: isBoss
+            ? theme.primaryAccent
+            : (levelNumber % 5 == 0
+                ? theme.primaryAccent.withValues(alpha: 0.7)
+                : theme.textSecondary.withValues(alpha: 0.5)),
       );
     }
 

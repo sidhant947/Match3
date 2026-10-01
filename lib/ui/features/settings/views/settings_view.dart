@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:match3/domain/models/user_progress.dart';
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
+import 'package:match3/ui/core/widgets/tangible_button.dart';
 import 'package:match3/ui/features/settings/widgets/custom_emoji_picker.dart';
 import 'package:match3/ui/providers.dart';
 
@@ -90,15 +92,6 @@ class SettingsView extends ConsumerWidget {
               color: isSelected ? activeTheme.primaryAccent : activeTheme.cardBorder,
               width: isSelected ? 3.0 : 1.5,
             ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: activeTheme.primaryAccent.withValues(alpha: 0.4),
-                      blurRadius: 10,
-                      spreadRadius: 1,
-                    )
-                  ]
-                : null,
           ),
           child: Stack(
             alignment: Alignment.center,
@@ -343,6 +336,18 @@ class SettingsView extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 8),
+                      TangibleButton(
+                        text: 'Become a Backer',
+                        icon: Icons.favorite_rounded,
+                        height: 48,
+                        onPressed: () {
+                          final Uri url = Uri.parse('https://ko-fi.com/sidhant947/tiers');
+                          launchUrl(url, mode: LaunchMode.externalApplication).catchError((_) => false);
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
                       _sectionHeader(
                         title: 'THEMES & SKINS',
                         icon: Icons.color_lens_rounded,
