@@ -9,6 +9,7 @@ import 'package:match3/ui/core/widgets/custom_gem_painter.dart';
 import 'package:match3/ui/core/widgets/tangible_button.dart';
 import 'package:match3/ui/features/game/views/game_view.dart';
 import 'package:match3/ui/features/level_select/views/level_select_view.dart';
+import 'package:match3/ui/features/how_to_play/views/how_to_play_view.dart';
 import 'package:match3/ui/features/settings/views/settings_view.dart';
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/providers.dart';
@@ -98,6 +99,97 @@ class _HomeViewState extends ConsumerState<HomeView>
           color: iconColor ?? theme.textPrimary,
         ),
       ),
+    );
+  }
+
+  void _showGameModesSheet(BuildContext context) {
+    final theme = ref.read(activeThemeSkinProvider);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+          decoration: BoxDecoration(
+            color: theme.cardBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: theme.cardBorder, width: 1.5)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.cardBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                TangibleButton(
+                  text: 'Time Attack',
+                  isSecondary: true,
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const GameView(levelNumber: 1, isTimeAttack: true),
+                      ),
+                    ).then((_) {
+                      if (mounted) {
+                        ref.read(homeViewModelProvider.notifier).loadProgress();
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                TangibleButton(
+                  text: 'Zen Mode',
+                  isSecondary: true,
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const GameView(levelNumber: 1, isZenMode: true),
+                      ),
+                    ).then((_) {
+                      if (mounted) {
+                        ref.read(homeViewModelProvider.notifier).loadProgress();
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                TangibleButton(
+                  text: 'Twist Mode',
+                  isSecondary: true,
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const GameView(levelNumber: 1, isTwistMode: true),
+                      ),
+                    ).then((_) {
+                      if (mounted) {
+                        ref.read(homeViewModelProvider.notifier).loadProgress();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -231,37 +323,18 @@ class _HomeViewState extends ConsumerState<HomeView>
                 ),
                 const SizedBox(height: 16),
                 TangibleButton(
-                  text: 'Time Attack',
+                  text: 'Game Modes',
                   isSecondary: true,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const GameView(levelNumber: 1, isTimeAttack: true),
-                    ),
-                  ),
+                  onPressed: () => _showGameModesSheet(context),
                 ),
                 const SizedBox(height: 16),
                 TangibleButton(
-                  text: 'Zen Mode',
+                  text: 'How to Play',
                   isSecondary: true,
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          const GameView(levelNumber: 1, isZenMode: true),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TangibleButton(
-                  text: 'Twist Mode',
-                  isSecondary: true,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const GameView(levelNumber: 1, isTwistMode: true),
+                      builder: (context) => const HowToPlayView(),
                     ),
                   ),
                 ),

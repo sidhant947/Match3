@@ -303,65 +303,69 @@ class _GameViewState extends ConsumerState<GameView> {
                           ),
                         ],
                       Expanded(
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: Center(
-                                child: _ComboBannerWidget(comboCount: state.comboCount),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                              child: AspectRatio(
-                                aspectRatio: 1.0,
-                                child: Listener(
-                                  onPointerDown: (event) {
-                                    _pointerStartPos = event.localPosition;
-                                    _hasSwiped = false;
-                                  },
-                                  onPointerMove: (event) {
-                                    if (_pointerStartPos == null) return;
-                                    final delta = event.localPosition - _pointerStartPos!;
-                                    if (widget.isTwistMode) {
-                                      if (delta.distance > 10) {
-                                        _hasSwiped = true;
-                                        _game.handleTwistDrag(event.localPosition);
-                                      }
-                                    } else {
-                                      if (!_hasSwiped && delta.distance > 20) {
-                                        _hasSwiped = true;
-                                        _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
-                                      }
-                                    }
-                                  },
-                                  onPointerUp: (event) {
-                                    if (!_hasSwiped && _pointerStartPos != null) {
-                                      _game.handleTapAt(_pointerStartPos!);
-                                    }
-                                    _pointerStartPos = null;
-                                  },
-                                  child: GameWidget(game: _game),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final twistHeight = widget.isTwistMode ? 64.0 : 0.0;
+                            final maxBoardHeight = constraints.maxHeight - twistHeight - 8.0;
+                            final maxBoardWidth = constraints.maxWidth - 24.0;
+                            final boardDimension = max(0.0, min(maxBoardWidth, maxBoardHeight));
+
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: boardDimension,
+                                  height: boardDimension,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Listener(
+                                        onPointerDown: (event) {
+                                          _pointerStartPos = event.localPosition;
+                                          _hasSwiped = false;
+                                        },
+                                        onPointerMove: (event) {
+                                          if (_pointerStartPos == null) return;
+                                          final delta = event.localPosition - _pointerStartPos!;
+                                          if (widget.isTwistMode) {
+                                            if (delta.distance > 10) {
+                                              _hasSwiped = true;
+                                              _game.handleTwistDrag(event.localPosition);
+                                            }
+                                          } else {
+                                            if (!_hasSwiped && delta.distance > 20) {
+                                              _hasSwiped = true;
+                                              _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
+                                            }
+                                          }
+                                        },
+                                        onPointerUp: (event) {
+                                          if (!_hasSwiped && _pointerStartPos != null) {
+                                            _game.handleTapAt(_pointerStartPos!);
+                                          }
+                                          _pointerStartPos = null;
+                                        },
+                                        child: GameWidget(game: _game),
+                                      ),
+                                      IgnorePointer(
+                                        child: _ComboBannerWidget(comboCount: state.comboCount),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            if (widget.isTwistMode) ...[
-                              Expanded(
-                                child: Center(
-                                  child: Padding(
+                                if (widget.isTwistMode) ...[
+                                  const SizedBox(height: 8),
+                                  Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 40.0),
                                     child: TangibleButton(
                                       text: 'TWIST ↻',
                                       onPressed: _game.twistCurrent,
                                     ),
                                   ),
-                                ),
-                              ),
-                            ] else ...[
-                              const Expanded(
-                                child: SizedBox(),
-                              ),
-                            ],
-                          ],
+                                ],
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],
