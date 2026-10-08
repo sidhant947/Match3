@@ -63,6 +63,7 @@ class GameViewModel extends ChangeNotifier {
       rows: 8,
       cols: 8,
       activeFruits: userProgress.activeEmojiSet,
+      disableTimedChallenges: userProgress.disableTimedChallenges,
     );
     _currentGoal = isTimeAttack
         ? const LevelGoal(

@@ -76,7 +76,7 @@ class LevelGenerator {
   static const int chapterSize = 25;
   static const int maxDefinedLevels = 5000;
 
-  static LevelConfig generate(int levelNumber, {bool isZenMode = false, int rows = 8, int cols = 8, List<String>? activeFruits}) {
+  static LevelConfig generate(int levelNumber, {bool isZenMode = false, int rows = 8, int cols = 8, List<String>? activeFruits, bool disableTimedChallenges = false}) {
     final fruits = (activeFruits != null && activeFruits.length >= 4) ? activeFruits : allFruits;
     if (isZenMode) {
       return LevelConfig(
@@ -173,7 +173,7 @@ class LevelGenerator {
     final int star3 = (targetScore * 1.45).round();
 
     final MilestoneReward reward = _generateReward(levelNumber, effectiveLevel, prestigeRank, diffType);
-    final bool isTimed = !isZenMode && levelNumber % 5 == 0;
+    final bool isTimed = !isZenMode && !disableTimedChallenges && levelNumber % 5 == 0;
     final int? timeLimit = isTimed ? 60 : null;
 
     return LevelConfig(

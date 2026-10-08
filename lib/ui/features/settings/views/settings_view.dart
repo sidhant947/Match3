@@ -281,6 +281,7 @@ class SettingsView extends ConsumerWidget {
     final hapticsEnabled = progress.hapticsEnabled;
     final audioEnabled = progress.audioEnabled;
     final twistLimiterEnabled = progress.twistLimiterEnabled;
+    final disableTimedChallenges = progress.disableTimedChallenges;
     final crateEmoji = progress.crateEmoji;
     final colorBombEmoji = progress.colorBombEmoji;
     final currentPreset = progress.emojiPreset;
@@ -520,6 +521,17 @@ class SettingsView extends ConsumerWidget {
                         onChanged: (val) {
                           if (val) HapticService.lightImpact();
                           progressRepo.setTwistLimiterEnabled(val);
+                        },
+                        theme: theme,
+                      ),
+                      _settingToggleRow(
+                        icon: Icons.timer_off_rounded,
+                        title: 'DISABLE TIMED CHALLENGES',
+                        subtitle: 'Remove 60s timer from every 5th level',
+                        value: disableTimedChallenges,
+                        onChanged: (val) {
+                          if (val) HapticService.lightImpact();
+                          progressRepo.setDisableTimedChallenges(val);
                         },
                         theme: theme,
                       ),

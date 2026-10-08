@@ -15,6 +15,7 @@ class UserProgress {
     this.twistLimiterEnabled = false,
     this.crateEmoji = '📦',
     this.colorBombEmoji = '🍭',
+    this.disableTimedChallenges = false,
   });
 
   final int currentLevel;
@@ -29,6 +30,7 @@ class UserProgress {
   final bool twistLimiterEnabled;
   final String crateEmoji;
   final String colorBombEmoji;
+  final bool disableTimedChallenges;
 
   static const Map<String, List<String>> presetMap = {
     'fruits': ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
@@ -57,6 +59,7 @@ class UserProgress {
     bool? twistLimiterEnabled,
     String? crateEmoji,
     String? colorBombEmoji,
+    bool? disableTimedChallenges,
   }) {
     return UserProgress(
       currentLevel: currentLevel ?? this.currentLevel,
@@ -71,6 +74,7 @@ class UserProgress {
       twistLimiterEnabled: twistLimiterEnabled ?? this.twistLimiterEnabled,
       crateEmoji: crateEmoji ?? this.crateEmoji,
       colorBombEmoji: colorBombEmoji ?? this.colorBombEmoji,
+      disableTimedChallenges: disableTimedChallenges ?? this.disableTimedChallenges,
     );
   }
 

@@ -177,6 +177,8 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
   }) {
     final isBoss = levelNumber % LevelGenerator.chapterSize == 0;
     final isMilestone = levelNumber % 100 == 0;
+    final disableTimed = ref.watch(homeViewModelProvider).progress?.disableTimedChallenges ?? false;
+    final isTimed = !disableTimed && levelNumber % 5 == 0;
 
     List<Color> gradientColors;
     Color borderColor;
@@ -241,7 +243,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               right: 2,
               child: Text('👑', style: TextStyle(fontSize: 10)),
             )
-          else if (levelNumber % 5 == 0)
+          else if (isTimed)
             const Positioned(
               top: 2,
               right: 2,
@@ -282,7 +284,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               right: 2,
               child: Text('👑', style: TextStyle(fontSize: 10)),
             )
-          else if (levelNumber % 5 == 0)
+          else if (isTimed)
             const Positioned(
               top: 2,
               right: 2,
@@ -296,11 +298,11 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
       content = Icon(
         isBoss
             ? Icons.workspace_premium_rounded
-            : (levelNumber % 5 == 0 ? Icons.timer_outlined : Icons.lock_outline_rounded),
+            : (isTimed ? Icons.timer_outlined : Icons.lock_outline_rounded),
         size: 20,
         color: isBoss
             ? theme.primaryAccent
-            : (levelNumber % 5 == 0
+            : (isTimed
                 ? theme.primaryAccent.withValues(alpha: 0.7)
                 : theme.textSecondary.withValues(alpha: 0.5)),
       );

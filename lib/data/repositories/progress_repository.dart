@@ -81,6 +81,11 @@ class ProgressRepository extends ChangeNotifier {
     await saveProgress(current.copyWith(colorBombEmoji: emoji));
   }
 
+  Future<void> setDisableTimedChallenges(bool disabled) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(disableTimedChallenges: disabled));
+  }
+
   Future<void> resetProgress() async {
     _cachedProgress = const UserProgress();
     await saveProgress(_cachedProgress!);
