@@ -665,7 +665,24 @@ class GameViewModel extends ChangeNotifier {
 
     final isGoalCompleted = _currentGoal.isCompleted;
     if (!_isZenMode && !_isTwistMode && !_levelConfig.isTimed && isGoalCompleted && _state.movesLeft > 0) {
-      await _triggerSugarCrush();
+      if (progressRepository.cachedProgress.disableEndOfLevelActivity) {
+        final bonusScore = _state.movesLeft * 1000;
+        final finalScore = _state.score + bonusScore;
+        final finalStars = calculateStars(finalScore);
+        _state = _state.copyWith(
+          score: finalScore,
+          movesLeft: 0,
+          isGameOver: true,
+          starsEarned: finalStars,
+        );
+        await progressRepository.completeLevel(
+          _state.levelNumber,
+          finalStars,
+        );
+        notifyListeners();
+      } else {
+        await _triggerSugarCrush();
+      }
     } else if (!_isZenMode && !_isTwistMode && ((_levelConfig.isTimed ? _state.timeLeft <= 0 : _state.movesLeft <= 0) || isGoalCompleted)) {
       _timeAttackTimer?.cancel();
       final finalStars = isGoalCompleted ? calculateStars(_state.score) : 0;
@@ -692,7 +709,6 @@ class GameViewModel extends ChangeNotifier {
 
     final createdSpecialIds = <String>[];
 
-    // Phase 1: Convert remaining moves into special candies one by one
     while (_state.movesLeft > 0) {
       final candidates = _state.tiles.where((t) => t.type == TileType.normal && !t.isFrozen && !createdSpecialIds.contains(t.id)).toList();
       if (candidates.isEmpty) break;
@@ -727,7 +743,6 @@ class GameViewModel extends ChangeNotifier {
 
     await Future.delayed(const Duration(milliseconds: 400));
 
-    // Phase 2: Detonate specials sequentially for full cinematic effect
     for (final specialId in createdSpecialIds) {
       final tile = _state.tiles.where((t) => t.id == specialId).firstOrNull;
       if (tile == null || tile.type == TileType.normal) continue;
@@ -761,7 +776,6 @@ class GameViewModel extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 380));
     }
 
-    // Phase 3: Cascade any remaining matches
     await _processMatchesAndCascade();
 
     final finalStars = calculateStars(_state.score);

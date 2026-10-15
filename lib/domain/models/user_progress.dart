@@ -16,6 +16,7 @@ class UserProgress {
     this.crateEmoji = '📦',
     this.colorBombEmoji = '🍭',
     this.disableTimedChallenges = false,
+    this.disableEndOfLevelActivity = false,
   });
 
   final int currentLevel;
@@ -31,6 +32,9 @@ class UserProgress {
   final String crateEmoji;
   final String colorBombEmoji;
   final bool disableTimedChallenges;
+  final bool disableEndOfLevelActivity;
+
+  bool get disableEndOfLevelAnimation => disableEndOfLevelActivity;
 
   static const Map<String, List<String>> presetMap = {
     'fruits': ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
@@ -60,6 +64,8 @@ class UserProgress {
     String? crateEmoji,
     String? colorBombEmoji,
     bool? disableTimedChallenges,
+    bool? disableEndOfLevelActivity,
+    bool? disableEndOfLevelAnimation,
   }) {
     return UserProgress(
       currentLevel: currentLevel ?? this.currentLevel,
@@ -75,6 +81,7 @@ class UserProgress {
       crateEmoji: crateEmoji ?? this.crateEmoji,
       colorBombEmoji: colorBombEmoji ?? this.colorBombEmoji,
       disableTimedChallenges: disableTimedChallenges ?? this.disableTimedChallenges,
+      disableEndOfLevelActivity: disableEndOfLevelActivity ?? disableEndOfLevelAnimation ?? this.disableEndOfLevelActivity,
     );
   }
 

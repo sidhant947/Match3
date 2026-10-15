@@ -33,7 +33,11 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  void _showCustomEmojiPickerSheet(BuildContext context, WidgetRef ref, List<String> currentCustom) {
+  void _showCustomEmojiPickerSheet(
+    BuildContext context,
+    WidgetRef ref,
+    List<String> currentCustom,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -49,7 +53,13 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  void _showSingleEmojiPickerSheet(BuildContext context, WidgetRef ref, String title, String currentEmoji, ValueChanged<String> onSave) {
+  void _showSingleEmojiPickerSheet(
+    BuildContext context,
+    WidgetRef ref,
+    String title,
+    String currentEmoji,
+    ValueChanged<String> onSave,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -89,7 +99,9 @@ class SettingsView extends ConsumerWidget {
               end: Alignment.bottomRight,
             ),
             border: Border.all(
-              color: isSelected ? activeTheme.primaryAccent : activeTheme.cardBorder,
+              color: isSelected
+                  ? activeTheme.primaryAccent
+                  : activeTheme.cardBorder,
               width: isSelected ? 3.0 : 1.5,
             ),
           ),
@@ -115,7 +127,9 @@ class SettingsView extends ConsumerWidget {
                   ),
                   child: Icon(
                     Icons.check_rounded,
-                    color: skin.primaryAccent.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
+                    color: skin.primaryAccent.computeLuminance() > 0.5
+                        ? Colors.black87
+                        : Colors.white,
                     size: 24,
                   ),
                 ),
@@ -143,10 +157,14 @@ class SettingsView extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? theme.primaryAccent.withValues(alpha: 0.12) : theme.cardBg.withValues(alpha: 0.5),
+          color: isSelected
+              ? theme.primaryAccent.withValues(alpha: 0.12)
+              : theme.cardBg.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? theme.primaryAccent : theme.cardBorder.withValues(alpha: 0.5),
+            color: isSelected
+                ? theme.primaryAccent
+                : theme.cardBorder.withValues(alpha: 0.5),
             width: isSelected ? 1.5 : 1.0,
           ),
         ),
@@ -161,7 +179,9 @@ class SettingsView extends ConsumerWidget {
                     style: TextStyle(
                       fontFamily: 'BebasNeue',
                       fontSize: 16,
-                      color: isSelected ? theme.primaryAccent : theme.textPrimary,
+                      color: isSelected
+                          ? theme.primaryAccent
+                          : theme.textPrimary,
                       letterSpacing: 1.1,
                     ),
                   ),
@@ -176,8 +196,12 @@ class SettingsView extends ConsumerWidget {
             ?trailingAction,
             const SizedBox(width: 8),
             Icon(
-              isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-              color: isSelected ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.5),
+              isSelected
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: isSelected
+                  ? theme.primaryAccent
+                  : theme.textSecondary.withValues(alpha: 0.5),
               size: 20,
             ),
           ],
@@ -186,7 +210,11 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  Widget _sectionHeader({required String title, required IconData icon, required AppThemeSkin theme}) {
+  Widget _sectionHeader({
+    required String title,
+    required IconData icon,
+    required AppThemeSkin theme,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(top: 14, bottom: 10),
       child: Row(
@@ -225,13 +253,11 @@ class SettingsView extends ConsumerWidget {
             decoration: BoxDecoration(
               color: theme.surfaceDark.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: theme.cardBorder.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: theme.cardBorder.withValues(alpha: 0.4),
+              ),
             ),
-            child: Icon(
-              icon,
-              color: theme.primaryAccent,
-              size: 20,
-            ),
+            child: Icon(icon, color: theme.primaryAccent, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -250,10 +276,7 @@ class SettingsView extends ConsumerWidget {
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: theme.textSecondary),
                 ),
               ],
             ),
@@ -282,6 +305,7 @@ class SettingsView extends ConsumerWidget {
     final audioEnabled = progress.audioEnabled;
     final twistLimiterEnabled = progress.twistLimiterEnabled;
     final disableTimedChallenges = progress.disableTimedChallenges;
+    final disableEndOfLevelActivity = progress.disableEndOfLevelActivity;
     final crateEmoji = progress.crateEmoji;
     final colorBombEmoji = progress.colorBombEmoji;
     final currentPreset = progress.emojiPreset;
@@ -294,7 +318,11 @@ class SettingsView extends ConsumerWidget {
           gradient: RadialGradient(
             center: const Alignment(0, -0.2),
             radius: 1.3,
-            colors: [theme.bgGradientStart, theme.bgGradientMiddle, theme.bgGradientEnd],
+            colors: [
+              theme.bgGradientStart,
+              theme.bgGradientMiddle,
+              theme.bgGradientEnd,
+            ],
             stops: const [0.0, 0.65, 1.0],
           ),
         ),
@@ -302,7 +330,10 @@ class SettingsView extends ConsumerWidget {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     _backButton(context, theme),
@@ -333,7 +364,10 @@ class SettingsView extends ConsumerWidget {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 4,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -343,12 +377,20 @@ class SettingsView extends ConsumerWidget {
                         icon: Icons.favorite_rounded,
                         height: 48,
                         onPressed: () {
-                          final Uri url = Uri.parse('https://ko-fi.com/sidhant947/tiers');
-                          launchUrl(url, mode: LaunchMode.externalApplication).catchError((_) => false);
+                          final Uri url = Uri.parse(
+                            'https://ko-fi.com/sidhant947/tiers',
+                          );
+                          launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          ).catchError((_) => false);
                         },
                       ),
                       const SizedBox(height: 6),
-                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
+                      Divider(
+                        color: theme.cardBorder.withValues(alpha: 0.4),
+                        height: 24,
+                      ),
                       _sectionHeader(
                         title: 'THEMES & SKINS',
                         icon: Icons.color_lens_rounded,
@@ -372,7 +414,10 @@ class SettingsView extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
+                      Divider(
+                        color: theme.cardBorder.withValues(alpha: 0.4),
+                        height: 24,
+                      ),
                       _sectionHeader(
                         title: 'EMOJI PIECE SET',
                         icon: Icons.palette_rounded,
@@ -413,15 +458,30 @@ class SettingsView extends ConsumerWidget {
                         theme: theme,
                         onTap: () {
                           progressRepo.setEmojiPreset('custom');
-                          _showCustomEmojiPickerSheet(context, ref, customEmojis);
+                          _showCustomEmojiPickerSheet(
+                            context,
+                            ref,
+                            customEmojis,
+                          );
                         },
                         trailingAction: IconButton(
-                          icon: Icon(Icons.tune_rounded, color: theme.primaryAccent, size: 20),
-                          onPressed: () => _showCustomEmojiPickerSheet(context, ref, customEmojis),
+                          icon: Icon(
+                            Icons.tune_rounded,
+                            color: theme.primaryAccent,
+                            size: 20,
+                          ),
+                          onPressed: () => _showCustomEmojiPickerSheet(
+                            context,
+                            ref,
+                            customEmojis,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
+                      Divider(
+                        color: theme.cardBorder.withValues(alpha: 0.4),
+                        height: 24,
+                      ),
                       _sectionHeader(
                         title: 'SPECIAL TILES',
                         icon: Icons.auto_awesome_rounded,
@@ -440,7 +500,11 @@ class SettingsView extends ConsumerWidget {
                           (emoji) => progressRepo.setCrateEmoji(emoji),
                         ),
                         trailingAction: IconButton(
-                          icon: Icon(Icons.edit_rounded, color: theme.primaryAccent, size: 20),
+                          icon: Icon(
+                            Icons.edit_rounded,
+                            color: theme.primaryAccent,
+                            size: 20,
+                          ),
                           onPressed: () => _showSingleEmojiPickerSheet(
                             context,
                             ref,
@@ -463,7 +527,11 @@ class SettingsView extends ConsumerWidget {
                           (emoji) => progressRepo.setColorBombEmoji(emoji),
                         ),
                         trailingAction: IconButton(
-                          icon: Icon(Icons.edit_rounded, color: theme.primaryAccent, size: 20),
+                          icon: Icon(
+                            Icons.edit_rounded,
+                            color: theme.primaryAccent,
+                            size: 20,
+                          ),
                           onPressed: () => _showSingleEmojiPickerSheet(
                             context,
                             ref,
@@ -474,7 +542,10 @@ class SettingsView extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Divider(color: theme.cardBorder.withValues(alpha: 0.4), height: 24),
+                      Divider(
+                        color: theme.cardBorder.withValues(alpha: 0.4),
+                        height: 24,
+                      ),
                       _sectionHeader(
                         title: 'PREFERENCES',
                         icon: Icons.tune_rounded,
@@ -532,6 +603,18 @@ class SettingsView extends ConsumerWidget {
                         onChanged: (val) {
                           if (val) HapticService.lightImpact();
                           progressRepo.setDisableTimedChallenges(val);
+                        },
+                        theme: theme,
+                      ),
+                      _settingToggleRow(
+                        icon: Icons.fast_forward_rounded,
+                        title: 'DISABLE Ending Animation',
+                        subtitle:
+                            'Skip animation converting remaining moves into points',
+                        value: disableEndOfLevelActivity,
+                        onChanged: (val) {
+                          if (val) HapticService.lightImpact();
+                          progressRepo.setDisableEndOfLevelActivity(val);
                         },
                         theme: theme,
                       ),
