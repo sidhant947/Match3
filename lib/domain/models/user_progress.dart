@@ -11,12 +11,12 @@ class UserProgress {
     this.audioEnabled = true,
     this.emojiPreset = 'fruits',
     this.customEmojis = const ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
-    this.themeId = 'dark_charcoal',
+    this.themeId = 'dark',
     this.twistLimiterEnabled = false,
     this.crateEmoji = '📦',
     this.colorBombEmoji = '🍭',
     this.disableTimedChallenges = false,
-    this.disableEndOfLevelActivity = false,
+    this.disableEndOfLevelActivity = true,
   });
 
   final int currentLevel;

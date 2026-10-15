@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:match3/data/repositories/progress_repository.dart';
 import 'package:match3/data/services/hive_service.dart';
@@ -25,10 +27,30 @@ final gameViewModelProvider = ChangeNotifierProvider.autoDispose<GameViewModel>(
   return GameViewModel(progressRepository: progressRepository);
 });
 
-final activeThemeSkinProvider = Provider<AppThemeSkin>((ref) {
-  final homeState = ref.watch(homeViewModelProvider);
-  final themeId = homeState.progress?.themeId ?? 'dark_charcoal';
-  return AppThemeSkin.getSkin(themeId);
+class PlatformBrightnessNotifier extends StateNotifier<Brightness> with WidgetsBindingObserver {
+  PlatformBrightnessNotifier() : super(PlatformDispatcher.instance.platformBrightness) {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    state = PlatformDispatcher.instance.platformBrightness;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+}
+
+final platformBrightnessProvider = StateNotifierProvider<PlatformBrightnessNotifier, Brightness>((ref) {
+  return PlatformBrightnessNotifier();
 });
 
-
+final activeThemeSkinProvider = Provider<AppThemeSkin>((ref) {
+  final homeState = ref.watch(homeViewModelProvider);
+  final themeId = homeState.progress?.themeId ?? 'dark';
+  final platformBrightness = ref.watch(platformBrightnessProvider);
+  return AppThemeSkin.getSkin(themeId, platformBrightness);
+});

@@ -66,4 +66,41 @@ class AppTheme {
       labelLarge: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, fontWeight: FontWeight.bold),
     ),
   );
+
+  static ThemeData get light => ThemeData(
+    fontFamily: 'BebasNeue',
+    pageTransitionsTheme: _noTransitionTheme,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: Colors.white,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: TextStyle(
+        fontFamily: 'BebasNeue',
+        fontSize: 26,
+        fontWeight: FontWeight.w900,
+        color: Colors.black,
+        letterSpacing: 1.0,
+      ),
+      iconTheme: IconThemeData(color: Colors.black),
+    ),
+    dividerTheme: const DividerThemeData(
+      color: Colors.black,
+      thickness: 1,
+    ),
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: -0.5),
+      displayMedium: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: -0.5),
+      displaySmall: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: -0.5),
+      headlineLarge: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: -0.5),
+      headlineMedium: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: -0.5),
+      headlineSmall: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: -0.5),
+      titleLarge: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: 0.5),
+      titleMedium: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, letterSpacing: 0.5),
+      bodyLarge: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, fontWeight: FontWeight.w500),
+      bodyMedium: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, fontWeight: FontWeight.normal),
+      labelLarge: TextStyle(fontFamily: 'BebasNeue', color: Colors.black, fontWeight: FontWeight.bold),
+    ),
+  );
 }

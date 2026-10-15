@@ -74,65 +74,98 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  Widget _circularThemeButton({
+  Widget _themeOptionButton({
     required WidgetRef ref,
-    required AppThemeSkin skin,
+    required String id,
+    required String label,
     required bool isSelected,
     required AppThemeSkin activeTheme,
   }) {
-    return GestureDetector(
-      onTap: () {
-        HapticService.mediumImpact();
-        ref.read(progressRepositoryProvider).setThemeId(skin.id);
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(right: 14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 58,
-          height: 58,
+    Widget preview;
+    if (id == 'dark') {
+      preview = Container(
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.black,
+          border: Border.all(
+            color: Colors.white,
+            width: 2,
+          ),
+        ),
+      );
+    } else if (id == 'light') {
+      preview = Container(
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(
+            color: Colors.black,
+            width: 2,
+          ),
+        ),
+      );
+    } else {
+      preview = Container(
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Colors.black, Colors.black, Colors.white, Colors.white],
+            stops: [0.0, 0.5, 0.5, 1.0],
+          ),
+          border: Border.all(
+            color: activeTheme.primaryAccent,
+            width: 2,
+          ),
+        ),
+      );
+    }
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticService.mediumImpact();
+          ref.read(progressRepositoryProvider).setThemeId(id);
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [skin.bgGradientStart, skin.bgGradientEnd],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: isSelected
+                ? activeTheme.primaryAccent.withValues(alpha: 0.15)
+                : activeTheme.cardBg,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isSelected
-                  ? activeTheme.primaryAccent
-                  : activeTheme.cardBorder,
-              width: isSelected ? 3.0 : 1.5,
+              color: isSelected ? activeTheme.primaryAccent : activeTheme.cardBorder,
+              width: isSelected ? 2.0 : 1.0,
             ),
           ),
-          child: Stack(
-            alignment: Alignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: skin.primaryAccent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: skin.cardBg, width: 2),
+              preview,
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'BebasNeue',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: isSelected ? activeTheme.primaryAccent : activeTheme.textPrimary,
+                  letterSpacing: 1.1,
                 ),
               ),
-              if (isSelected)
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: activeTheme.primaryAccent.withValues(alpha: 0.15),
-                  ),
-                  child: Icon(
-                    Icons.check_rounded,
-                    color: skin.primaryAccent.computeLuminance() > 0.5
-                        ? Colors.black87
-                        : Colors.white,
-                    size: 24,
-                  ),
-                ),
+              const SizedBox(height: 4),
+              Icon(
+                isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                color: isSelected ? activeTheme.primaryAccent : activeTheme.textSecondary.withValues(alpha: 0.5),
+                size: 18,
+              ),
             ],
           ),
         ),
@@ -392,26 +425,34 @@ class SettingsView extends ConsumerWidget {
                         height: 24,
                       ),
                       _sectionHeader(
-                        title: 'THEMES & SKINS',
+                        title: 'THEME',
                         icon: Icons.color_lens_rounded,
                         theme: theme,
                       ),
-                      SizedBox(
-                        height: 64,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: AppThemeSkin.allSkins.length,
-                          itemBuilder: (context, idx) {
-                            final skin = AppThemeSkin.allSkins[idx];
-                            return _circularThemeButton(
-                              ref: ref,
-                              skin: skin,
-                              isSelected: currentThemeId == skin.id,
-                              activeTheme: theme,
-                            );
-                          },
-                        ),
+                      Row(
+                        children: [
+                          _themeOptionButton(
+                            ref: ref,
+                            id: 'dark',
+                            label: 'DARK',
+                            isSelected: currentThemeId != 'light' && currentThemeId != 'system',
+                            activeTheme: theme,
+                          ),
+                          _themeOptionButton(
+                            ref: ref,
+                            id: 'light',
+                            label: 'LIGHT',
+                            isSelected: currentThemeId == 'light',
+                            activeTheme: theme,
+                          ),
+                          _themeOptionButton(
+                            ref: ref,
+                            id: 'system',
+                            label: 'SYSTEM',
+                            isSelected: currentThemeId == 'system',
+                            activeTheme: theme,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       Divider(
@@ -608,7 +649,7 @@ class SettingsView extends ConsumerWidget {
                       ),
                       _settingToggleRow(
                         icon: Icons.fast_forward_rounded,
-                        title: 'DISABLE Ending Animation',
+                        title: 'DISABLE END OF LEVEL ACTIVITY',
                         subtitle:
                             'Skip animation converting remaining moves into points',
                         value: disableEndOfLevelActivity,

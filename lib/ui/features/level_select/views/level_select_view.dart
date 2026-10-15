@@ -67,8 +67,8 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
     final state = ref.watch(homeViewModelProvider);
     final highestCompleted = state.progress?.highestLevelCompleted ?? 0;
     final currentLevel = state.progress?.currentLevel ?? 1;
-
-    final totalLevelsToShow = math.max(100, math.min(5000, currentLevel + 50));
+    final highestUnlocked = math.max(currentLevel, highestCompleted + 1);
+    final totalLevelsToShow = highestUnlocked + 10;
     final theme = ref.watch(activeThemeSkinProvider);
 
     return Scaffold(
@@ -116,7 +116,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
                               ),
                             ),
                             Text(
-                              'CHAPTER ${((currentLevel - 1) ~/ LevelGenerator.chapterSize) + 1} • LEVEL $currentLevel',
+                              'CHAPTER ${((highestUnlocked - 1) ~/ LevelGenerator.chapterSize) + 1} • LEVEL $highestUnlocked',
                               style: TextStyle(
                                 fontFamily: 'BebasNeue',
                                 fontSize: 13,
@@ -146,8 +146,8 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
                   itemBuilder: (context, index) {
                     final levelNumber = index + 1;
                     final isCompleted = levelNumber <= highestCompleted;
-                    final isCurrent = levelNumber == currentLevel;
-                    final isLocked = levelNumber > currentLevel;
+                    final isCurrent = levelNumber == highestUnlocked;
+                    final isLocked = levelNumber > highestUnlocked;
 
                     return _buildLevelCard(
                       context,
@@ -254,7 +254,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
     } else if (isCurrent) {
       gradientColors = [theme.primaryAccent.withValues(alpha: 0.88), theme.primaryAccent];
       borderColor = theme.primaryAccent;
-      final textColor = theme.primaryAccent.computeLuminance() > 0.5 ? const Color(0xFF1A1A1A) : Colors.white;
+      final textColor = theme.primaryAccent.computeLuminance() > 0.5 ? Colors.black : Colors.white;
 
       content = Stack(
         alignment: Alignment.center,

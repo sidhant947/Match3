@@ -94,10 +94,10 @@ class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTick
 
     final Color effectiveTextColor = widget.textColor ??
         (widget.color != null
-            ? (widget.color!.computeLuminance() > 0.5 ? const Color(0xFF1A1A1A) : Colors.white)
+            ? (widget.color!.computeLuminance() > 0.5 ? Colors.black : Colors.white)
             : (widget.isSecondary
                 ? theme.textPrimary
-                : (theme.primaryAccent.computeLuminance() > 0.5 ? const Color(0xFF1A1A1A) : Colors.white)));
+                : (theme.primaryAccent.computeLuminance() > 0.5 ? Colors.black : Colors.white)));
 
     return GestureDetector(
       onTapDown: _handleTapDown,

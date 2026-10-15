@@ -38,12 +38,12 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       audioEnabled: fields[5] as bool? ?? true,
       emojiPreset: fields[6] as String? ?? 'fruits',
       customEmojis: customList,
-      themeId: fields[8] as String? ?? 'dark_charcoal',
+      themeId: fields[8] as String? ?? 'dark',
       twistLimiterEnabled: fields[9] as bool? ?? false,
       crateEmoji: fields[10] as String? ?? '📦',
       colorBombEmoji: fields[11] as String? ?? '🍭',
       disableTimedChallenges: fields[12] as bool? ?? false,
-      disableEndOfLevelActivity: fields[13] as bool? ?? false,
+      disableEndOfLevelActivity: fields[13] as bool? ?? true,
     );
   }
 

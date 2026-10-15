@@ -34,14 +34,15 @@ void main() async {
   );
 }
 
-class MatchThreeApp extends StatelessWidget {
+class MatchThreeApp extends ConsumerWidget {
   const MatchThreeApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(activeThemeSkinProvider);
     return MaterialApp(
       title: 'Match Three',
-      theme: AppTheme.dark,
+      theme: theme.brightness == Brightness.light ? AppTheme.light : AppTheme.dark,
       home: const HomeView(),
       debugShowCheckedModeBanner: false,
     );

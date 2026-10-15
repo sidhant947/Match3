@@ -21,10 +21,7 @@ class HomeView extends ConsumerStatefulWidget {
   ConsumerState<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends ConsumerState<HomeView>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _glowController;
-  late Animation<double> _glowAnimation;
+class _HomeViewState extends ConsumerState<HomeView> {
   Timer? _gemTimer;
   int _gemIndex = 0;
 
@@ -33,15 +30,6 @@ class _HomeViewState extends ConsumerState<HomeView>
     super.initState();
     Future.microtask(
       () => ref.read(homeViewModelProvider.notifier).loadProgress(),
-    );
-
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _glowAnimation = Tween<double>(begin: 8.0, end: 20.0).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
     _gemTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
@@ -56,7 +44,6 @@ class _HomeViewState extends ConsumerState<HomeView>
   @override
   void dispose() {
     _gemTimer?.cancel();
-    _glowController.dispose();
     super.dispose();
   }
 
@@ -218,7 +205,7 @@ class _HomeViewState extends ConsumerState<HomeView>
                   children: [
                     _circleButton(
                       icon: Icons.star_rounded,
-                      iconColor: theme.primaryAccent,
+                      iconColor: const Color(0xFFFFD13B),
                       theme: theme,
                       onTap: () =>
                           _launchUrl('https://github.com/sidhant947/Match3'),
@@ -251,41 +238,11 @@ class _HomeViewState extends ConsumerState<HomeView>
                 SizedBox(
                   width: 85,
                   height: 110,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      AnimatedBuilder(
-                        animation: _glowAnimation,
-                        builder: (context, child) {
-                          return Positioned(
-                            left: -16,
-                            top: -16,
-                            right: -16,
-                            bottom: -16,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.primaryAccent.withValues(alpha: 0.4),
-                                    blurRadius: _glowAnimation.value * 1.5,
-                                    spreadRadius: _glowAnimation.value / 2,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      Positioned.fill(
-                        child: GemWidget(
-                          gemType: GemType.values[_gemIndex % GemType.values.length],
-                          emoji: (state.progress?.activeEmojiSet != null && state.progress!.activeEmojiSet.isNotEmpty)
-                              ? state.progress!.activeEmojiSet[_gemIndex % state.progress!.activeEmojiSet.length]
-                              : null,
-                        ),
-                      ),
-                    ],
+                  child: GemWidget(
+                    gemType: GemType.values[_gemIndex % GemType.values.length],
+                    emoji: (state.progress?.activeEmojiSet != null && state.progress!.activeEmojiSet.isNotEmpty)
+                        ? state.progress!.activeEmojiSet[_gemIndex % state.progress!.activeEmojiSet.length]
+                        : null,
                   ),
                 ),
                 const Spacer(flex: 4),
