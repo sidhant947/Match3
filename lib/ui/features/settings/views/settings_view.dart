@@ -88,9 +88,9 @@ class SettingsView extends ConsumerWidget {
         height: 22,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.black,
+          color: const Color(0xFF1C1E2B),
           border: Border.all(
-            color: Colors.white,
+            color: const Color(0xFFFFB703),
             width: 2,
           ),
         ),
@@ -101,9 +101,9 @@ class SettingsView extends ConsumerWidget {
         height: 22,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white,
+          color: const Color(0xFFF8FAFC),
           border: Border.all(
-            color: Colors.black,
+            color: const Color(0xFFEA580C),
             width: 2,
           ),
         ),
@@ -115,7 +115,7 @@ class SettingsView extends ConsumerWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: const LinearGradient(
-            colors: [Colors.black, Colors.black, Colors.white, Colors.white],
+            colors: [Color(0xFF1C1E2B), Color(0xFF1C1E2B), Color(0xFFF8FAFC), Color(0xFFF8FAFC)],
             stops: [0.0, 0.5, 0.5, 1.0],
           ),
           border: Border.all(
@@ -339,6 +339,7 @@ class SettingsView extends ConsumerWidget {
     final twistLimiterEnabled = progress.twistLimiterEnabled;
     final disableTimedChallenges = progress.disableTimedChallenges;
     final disableEndOfLevelActivity = progress.disableEndOfLevelActivity;
+    final skipLevelEnabled = progress.skipLevelEnabled;
     final crateEmoji = progress.crateEmoji;
     final colorBombEmoji = progress.colorBombEmoji;
     final currentPreset = progress.emojiPreset;
@@ -656,6 +657,17 @@ class SettingsView extends ConsumerWidget {
                         onChanged: (val) {
                           if (val) HapticService.lightImpact();
                           progressRepo.setDisableEndOfLevelActivity(val);
+                        },
+                        theme: theme,
+                      ),
+                      _settingToggleRow(
+                        icon: Icons.skip_next_rounded,
+                        title: 'ENABLE SKIP LEVEL BUTTON',
+                        subtitle: 'Show skip level button on level fail',
+                        value: skipLevelEnabled,
+                        onChanged: (val) {
+                          if (val) HapticService.lightImpact();
+                          progressRepo.setSkipLevelEnabled(val);
                         },
                         theme: theme,
                       ),

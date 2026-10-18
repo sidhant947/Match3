@@ -44,12 +44,13 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       colorBombEmoji: fields[11] as String? ?? '🍭',
       disableTimedChallenges: fields[12] as bool? ?? false,
       disableEndOfLevelActivity: fields[13] as bool? ?? true,
+      skipLevelEnabled: fields[14] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProgress obj) {
-    writer.writeByte(14);
+    writer.writeByte(15);
     writer.writeByte(0);
     writer.write(obj.currentLevel);
     writer.writeByte(1);
@@ -78,5 +79,7 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
     writer.write(obj.disableTimedChallenges);
     writer.writeByte(13);
     writer.write(obj.disableEndOfLevelActivity);
+    writer.writeByte(14);
+    writer.write(obj.skipLevelEnabled);
   }
 }

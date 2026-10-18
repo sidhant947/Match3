@@ -59,6 +59,7 @@ class _GameViewState extends ConsumerState<GameView> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(activeThemeSkinProvider);
+    _game.themeSkin = theme;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -427,6 +428,7 @@ class _GameViewState extends ConsumerState<GameView> {
                       isWin: widget.isTimeAttack ? true : isWin,
                       currentLevel: state.levelNumber,
                       theme: theme,
+                      skipLevelEnabled: _viewModel.progressRepository.cachedProgress.skipLevelEnabled,
                     ),
                 ],
               );
@@ -594,6 +596,7 @@ class _GameViewState extends ConsumerState<GameView> {
     required bool isWin,
     required int currentLevel,
     required AppThemeSkin theme,
+    required bool skipLevelEnabled,
   }) {
     final config = _viewModel.state.levelConfig;
     final reward = config?.reward;
@@ -614,8 +617,8 @@ class _GameViewState extends ConsumerState<GameView> {
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isWin ? theme.primaryAccent : const Color(0xFFFF4D4D),
-                width: 3.0,
+                color: isWin ? theme.cardBorder : const Color(0xFFFF4D4D),
+                width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
@@ -692,7 +695,7 @@ class _GameViewState extends ConsumerState<GameView> {
                     decoration: BoxDecoration(
                       color: theme.surfaceDark,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.primaryAccent, width: 1.2),
+                      border: Border.all(color: theme.cardBorder, width: 1.2),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -757,7 +760,7 @@ class _GameViewState extends ConsumerState<GameView> {
                       _viewModel.initGame(level: currentLevel + 1);
                     },
                   )
-                else
+                else ...[
                   TangibleButton(
                     text: 'TRY AGAIN',
                     height: 44,
@@ -765,6 +768,15 @@ class _GameViewState extends ConsumerState<GameView> {
                       _viewModel.initGame(level: currentLevel);
                     },
                   ),
+                  if (skipLevelEnabled) ...[
+                    const SizedBox(height: 10),
+                    TangibleButton(
+                      text: 'SKIP LEVEL',
+                      height: 44,
+                      onPressed: _viewModel.skipLevel,
+                    ),
+                  ],
+                ],
                 const SizedBox(height: 10),
                 TangibleButton(
                   text: 'HOME',

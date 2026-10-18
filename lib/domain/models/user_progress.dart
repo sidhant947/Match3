@@ -17,6 +17,7 @@ class UserProgress {
     this.colorBombEmoji = '🍭',
     this.disableTimedChallenges = false,
     this.disableEndOfLevelActivity = true,
+    this.skipLevelEnabled = false,
   });
 
   final int currentLevel;
@@ -33,6 +34,7 @@ class UserProgress {
   final String colorBombEmoji;
   final bool disableTimedChallenges;
   final bool disableEndOfLevelActivity;
+  final bool skipLevelEnabled;
 
   bool get disableEndOfLevelAnimation => disableEndOfLevelActivity;
 
@@ -66,6 +68,7 @@ class UserProgress {
     bool? disableTimedChallenges,
     bool? disableEndOfLevelActivity,
     bool? disableEndOfLevelAnimation,
+    bool? skipLevelEnabled,
   }) {
     return UserProgress(
       currentLevel: currentLevel ?? this.currentLevel,
@@ -82,6 +85,7 @@ class UserProgress {
       colorBombEmoji: colorBombEmoji ?? this.colorBombEmoji,
       disableTimedChallenges: disableTimedChallenges ?? this.disableTimedChallenges,
       disableEndOfLevelActivity: disableEndOfLevelActivity ?? disableEndOfLevelAnimation ?? this.disableEndOfLevelActivity,
+      skipLevelEnabled: skipLevelEnabled ?? this.skipLevelEnabled,
     );
   }
 
@@ -102,6 +106,13 @@ class UserProgress {
       currentLevel: level >= currentLevel ? level + 1 : currentLevel,
       highestLevelCompleted: level > highestLevelCompleted ? level : highestLevelCompleted,
       levelStars: updatedStars,
+    );
+  }
+
+  UserProgress skipLevel(int level) {
+    return copyWith(
+      currentLevel: level >= currentLevel ? level + 1 : currentLevel,
+      highestLevelCompleted: level > highestLevelCompleted ? level : highestLevelCompleted,
     );
   }
 }

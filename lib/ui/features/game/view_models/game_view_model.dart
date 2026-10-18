@@ -49,6 +49,16 @@ class GameViewModel extends ChangeNotifier {
     super.dispose();
   }
 
+  Future<void> skipLevel() async {
+    await progressRepository.skipLevel(_state.levelNumber);
+    await initGame(
+      level: _state.levelNumber + 1,
+      isZenMode: _isZenMode,
+      isTimeAttack: _isTimeAttack,
+      isTwistMode: _isTwistMode,
+    );
+  }
+
   Future<void> initGame({int level = 1, bool isZenMode = false, bool isTimeAttack = false, bool isTwistMode = false}) async {
     _hintTimer?.cancel();
     _timeAttackTimer?.cancel();

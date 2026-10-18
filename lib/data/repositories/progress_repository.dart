@@ -93,6 +93,17 @@ class ProgressRepository extends ChangeNotifier {
 
   Future<void> setDisableEndOfLevelAnimation(bool disabled) => setDisableEndOfLevelActivity(disabled);
 
+  Future<void> setSkipLevelEnabled(bool enabled) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(skipLevelEnabled: enabled));
+  }
+
+  Future<void> skipLevel(int levelNumber) async {
+    final current = await getProgress();
+    final updated = current.skipLevel(levelNumber);
+    await saveProgress(updated);
+  }
+
   Future<void> resetProgress() async {
     _cachedProgress = const UserProgress();
     await saveProgress(_cachedProgress!);
