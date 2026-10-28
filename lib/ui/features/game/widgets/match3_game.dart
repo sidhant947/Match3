@@ -331,16 +331,11 @@ class Match3Game extends FlameGame {
     if (cellSize <= 0) return;
 
     final accentColor = themeSkin?.primaryAccent ?? const Color(0xFFFFCE31);
-    final borderColor = themeSkin?.cardBorder ?? Colors.white.withValues(alpha: 0.12);
     final cellBgColor = themeSkin?.cardBg.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.05);
 
     final cellBgPaint = Paint()
       ..color = cellBgColor
       ..style = PaintingStyle.fill;
-    final cellBorderPaint = Paint()
-      ..color = borderColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
     final selectedCellPaint = Paint()
       ..color = accentColor.withValues(alpha: 0.35)
       ..style = PaintingStyle.fill;
@@ -372,10 +367,17 @@ class Match3Game extends FlameGame {
           RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
           isSelected ? selectedCellPaint : (hasJelly ? jellyBgPaint : cellBgPaint),
         );
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
-          isSelected ? selectedBorderPaint : (hasJelly ? jellyBorderPaint : cellBorderPaint),
-        );
+        if (isSelected) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
+            selectedBorderPaint,
+          );
+        } else if (hasJelly) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
+            jellyBorderPaint,
+          );
+        }
 
         if (hasJelly) {
           final frostStarPaint = Paint()

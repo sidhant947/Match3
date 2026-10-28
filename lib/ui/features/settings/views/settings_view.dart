@@ -22,6 +22,13 @@ class SettingsView extends ConsumerWidget {
         decoration: BoxDecoration(
           color: theme.cardBg,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: theme.shadowColor,
+              offset: const Offset(0, 4),
+              blurRadius: 6,
+            ),
+          ],
           border: Border.all(color: theme.cardBorder, width: 1.5),
         ),
         child: Icon(
@@ -79,94 +86,34 @@ class SettingsView extends ConsumerWidget {
     required String id,
     required String label,
     required bool isSelected,
-    required AppThemeSkin activeTheme,
+    required AppThemeSkin theme,
   }) {
-    Widget preview;
-    if (id == 'dark') {
-      preview = Container(
-        width: 22,
-        height: 22,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFF1C1E2B),
-          border: Border.all(
-            color: const Color(0xFFFFB703),
-            width: 2,
-          ),
-        ),
-      );
-    } else if (id == 'light') {
-      preview = Container(
-        width: 22,
-        height: 22,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFFF8FAFC),
-          border: Border.all(
-            color: const Color(0xFFEA580C),
-            width: 2,
-          ),
-        ),
-      );
-    } else {
-      preview = Container(
-        width: 22,
-        height: 22,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1C1E2B), Color(0xFF1C1E2B), Color(0xFFF8FAFC), Color(0xFFF8FAFC)],
-            stops: [0.0, 0.5, 0.5, 1.0],
-          ),
-          border: Border.all(
-            color: activeTheme.primaryAccent,
-            width: 2,
-          ),
-        ),
-      );
-    }
+    final activeColor = theme.primaryAccent;
+    final activeTextColor = activeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
           HapticService.mediumImpact();
           ref.read(progressRepositoryProvider).setThemeId(id);
         },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected
-                ? activeTheme.primaryAccent.withValues(alpha: 0.15)
-                : activeTheme.cardBg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected ? activeTheme.primaryAccent : activeTheme.cardBorder,
-              width: isSelected ? 2.0 : 1.0,
-            ),
+            color: isSelected ? activeColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              preview,
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'BebasNeue',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: isSelected ? activeTheme.primaryAccent : activeTheme.textPrimary,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Icon(
-                isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                color: isSelected ? activeTheme.primaryAccent : activeTheme.textSecondary.withValues(alpha: 0.5),
-                size: 18,
-              ),
-            ],
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'BebasNeue',
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: isSelected ? activeTextColor : theme.textSecondary,
+              letterSpacing: 1.0,
+            ),
           ),
         ),
       ),
@@ -430,30 +377,45 @@ class SettingsView extends ConsumerWidget {
                         icon: Icons.color_lens_rounded,
                         theme: theme,
                       ),
-                      Row(
-                        children: [
-                          _themeOptionButton(
-                            ref: ref,
-                            id: 'dark',
-                            label: 'DARK',
-                            isSelected: currentThemeId != 'light' && currentThemeId != 'system',
-                            activeTheme: theme,
-                          ),
-                          _themeOptionButton(
-                            ref: ref,
-                            id: 'light',
-                            label: 'LIGHT',
-                            isSelected: currentThemeId == 'light',
-                            activeTheme: theme,
-                          ),
-                          _themeOptionButton(
-                            ref: ref,
-                            id: 'system',
-                            label: 'SYSTEM',
-                            isSelected: currentThemeId == 'system',
-                            activeTheme: theme,
-                          ),
-                        ],
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: theme.cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: theme.cardBorder, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.shadowColor,
+                              offset: const Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            _themeOptionButton(
+                              ref: ref,
+                              id: 'dark',
+                              label: 'DARK',
+                              isSelected: currentThemeId != 'light' && currentThemeId != 'system',
+                              theme: theme,
+                            ),
+                            _themeOptionButton(
+                              ref: ref,
+                              id: 'light',
+                              label: 'LIGHT',
+                              isSelected: currentThemeId == 'light',
+                              theme: theme,
+                            ),
+                            _themeOptionButton(
+                              ref: ref,
+                              id: 'system',
+                              label: 'SYSTEM',
+                              isSelected: currentThemeId == 'system',
+                              theme: theme,
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Divider(

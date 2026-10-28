@@ -506,7 +506,7 @@ class _GameViewState extends ConsumerState<GameView> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: theme.shadowColor,
               offset: const Offset(0, 4),
               blurRadius: 6,
             ),
@@ -537,7 +537,7 @@ class _GameViewState extends ConsumerState<GameView> {
         border: Border.all(color: theme.cardBorder, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: theme.shadowColor,
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
@@ -603,12 +603,13 @@ class _GameViewState extends ConsumerState<GameView> {
     final hasSpecialReward = isWin && reward != null && reward.type != MilestoneRewardType.none;
 
     return Container(
-      color: Colors.black.withValues(alpha: 0.75),
+      color: Colors.transparent,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28.0),
           child: Container(
-            padding: const EdgeInsets.all(24.0),
+            constraints: const BoxConstraints(maxWidth: 360),
+            padding: const EdgeInsets.all(18.0),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [theme.cardBg, theme.surfaceDark],
@@ -622,7 +623,7 @@ class _GameViewState extends ConsumerState<GameView> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: theme.shadowColor,
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
@@ -640,36 +641,36 @@ class _GameViewState extends ConsumerState<GameView> {
                         padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: Icon(
                           Icons.star_rounded,
-                          size: 44,
+                          size: 32,
                           color: earned ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
                         ),
                       );
                     }),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                 ] else ...[
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(8),
                     decoration: const BoxDecoration(
                       color: Color(0xFFFF4D4D),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.sentiment_dissatisfied_rounded,
-                      size: 48,
+                      size: 34,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                 ],
                 Text(
                   title,
                   style: TextStyle(
                     fontFamily: 'BebasNeue',
-                    fontSize: 28,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: theme.textPrimary,
-                    letterSpacing: 1.5,
+                    letterSpacing: 1.2,
                     shadows: const [
                       Shadow(
                         offset: Offset(0, 2),
@@ -684,14 +685,14 @@ class _GameViewState extends ConsumerState<GameView> {
                   message,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: theme.textSecondary,
                   ),
                 ),
                 if (hasSpecialReward) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: theme.surfaceDark,
                       borderRadius: BorderRadius.circular(12),
@@ -700,7 +701,7 @@ class _GameViewState extends ConsumerState<GameView> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(reward.iconEmoji, style: const TextStyle(fontSize: 24)),
+                        Text(reward.iconEmoji, style: const TextStyle(fontSize: 20)),
                         const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,14 +710,14 @@ class _GameViewState extends ConsumerState<GameView> {
                               reward.title,
                               style: TextStyle(
                                 fontFamily: 'BebasNeue',
-                                fontSize: 16,
+                                fontSize: 13,
                                 color: theme.primaryAccent,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               reward.description,
-                              style: TextStyle(fontSize: 11, color: theme.textSecondary),
+                              style: TextStyle(fontSize: 10, color: theme.textSecondary),
                             ),
                           ],
                         ),
@@ -724,30 +725,31 @@ class _GameViewState extends ConsumerState<GameView> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     color: theme.surfaceDark,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: theme.cardBorder),
                   ),
                   child: Text(
                     'FINAL SCORE: $score',
                     style: TextStyle(
                       fontFamily: 'BebasNeue',
-                      fontSize: 18,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: theme.primaryAccent,
                       letterSpacing: 1.0,
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 if (widget.isTimeAttack)
                   TangibleButton(
                     text: 'PLAY AGAIN',
-                    height: 44,
+                    height: 40,
+                    fontSize: 15,
                     onPressed: () {
                       _viewModel.initGame(level: 1, isTimeAttack: true);
                     },
@@ -755,7 +757,8 @@ class _GameViewState extends ConsumerState<GameView> {
                 else if (isWin)
                   TangibleButton(
                     text: 'NEXT LEVEL',
-                    height: 44,
+                    height: 40,
+                    fontSize: 15,
                     onPressed: () {
                       _viewModel.initGame(level: currentLevel + 1);
                     },
@@ -763,25 +766,28 @@ class _GameViewState extends ConsumerState<GameView> {
                 else ...[
                   TangibleButton(
                     text: 'TRY AGAIN',
-                    height: 44,
+                    height: 40,
+                    fontSize: 15,
                     onPressed: () {
                       _viewModel.initGame(level: currentLevel);
                     },
                   ),
                   if (skipLevelEnabled) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     TangibleButton(
                       text: 'SKIP LEVEL',
-                      height: 44,
+                      height: 40,
+                      fontSize: 15,
                       onPressed: _viewModel.skipLevel,
                     ),
                   ],
                 ],
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 TangibleButton(
                   text: 'HOME',
                   isSecondary: true,
-                  height: 44,
+                  height: 40,
+                  fontSize: 15,
                   onPressed: () {
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },

@@ -14,6 +14,7 @@ class TangibleButton extends ConsumerStatefulWidget {
     this.textColor,
     this.borderColor,
     this.icon,
+    this.fontSize,
   });
 
   final String text;
@@ -24,6 +25,7 @@ class TangibleButton extends ConsumerStatefulWidget {
   final Color? textColor;
   final Color? borderColor;
   final IconData? icon;
+  final double? fontSize;
 
   @override
   ConsumerState<TangibleButton> createState() => _TangibleButtonState();
@@ -126,7 +128,7 @@ class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTick
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
+                      color: theme.shadowColor,
                       offset: Offset(0, _isPressed ? 1 : 4),
                       blurRadius: _isPressed ? 2 : 8,
                     ),
@@ -152,7 +154,7 @@ class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTick
                         style: TextStyle(
                           fontFamily: 'BebasNeue',
                           color: effectiveTextColor,
-                          fontSize: 19,
+                          fontSize: widget.fontSize ?? 19,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 2.0,
                           shadows: widget.isSecondary

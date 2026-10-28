@@ -46,7 +46,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: theme.shadowColor,
               offset: const Offset(0, 4),
               blurRadius: 6,
             ),
@@ -335,7 +335,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
+              color: theme.shadowColor,
               offset: const Offset(0, 4),
               blurRadius: 4,
             ),
