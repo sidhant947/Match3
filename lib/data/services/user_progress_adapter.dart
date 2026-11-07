@@ -43,8 +43,8 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
       crateEmoji: fields[10] as String? ?? '📦',
       colorBombEmoji: fields[11] as String? ?? '🍭',
       disableTimedChallenges: fields[12] as bool? ?? false,
-      disableEndOfLevelActivity: fields[13] as bool? ?? true,
       skipLevelEnabled: fields[14] as bool? ?? false,
+      confettiCelebrationEnabled: fields[15] as bool? ?? false,
     );
   }
 
@@ -77,9 +77,9 @@ class UserProgressAdapter extends TypeAdapter<UserProgress> {
     writer.write(obj.colorBombEmoji);
     writer.writeByte(12);
     writer.write(obj.disableTimedChallenges);
-    writer.writeByte(13);
-    writer.write(obj.disableEndOfLevelActivity);
     writer.writeByte(14);
     writer.write(obj.skipLevelEnabled);
+    writer.writeByte(15);
+    writer.write(obj.confettiCelebrationEnabled);
   }
 }

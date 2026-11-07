@@ -39,7 +39,7 @@ class AppThemeSkin {
     bgGradientEnd: Color(0xFF141416),
     cardBg: Color(0xFF2C2C2E),
     cardBorder: Color(0xFF3A3A3C),
-    primaryAccent: Color(0xFFFFB703),
+    primaryAccent: Color(0xFFF5F5F7),
     textPrimary: Color(0xFFF5F5F7),
     textSecondary: Color(0xFF8E8E93),
     surfaceDark: Color(0xFF1D1D1F),

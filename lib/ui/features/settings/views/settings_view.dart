@@ -285,8 +285,8 @@ class SettingsView extends ConsumerWidget {
     final audioEnabled = progress.audioEnabled;
     final twistLimiterEnabled = progress.twistLimiterEnabled;
     final disableTimedChallenges = progress.disableTimedChallenges;
-    final disableEndOfLevelActivity = progress.disableEndOfLevelActivity;
     final skipLevelEnabled = progress.skipLevelEnabled;
+    final confettiCelebrationEnabled = progress.confettiCelebrationEnabled;
     final crateEmoji = progress.crateEmoji;
     final colorBombEmoji = progress.colorBombEmoji;
     final currentPreset = progress.emojiPreset;
@@ -611,18 +611,6 @@ class SettingsView extends ConsumerWidget {
                         theme: theme,
                       ),
                       _settingToggleRow(
-                        icon: Icons.fast_forward_rounded,
-                        title: 'DISABLE END OF LEVEL ACTIVITY',
-                        subtitle:
-                            'Skip animation converting remaining moves into points',
-                        value: disableEndOfLevelActivity,
-                        onChanged: (val) {
-                          if (val) HapticService.lightImpact();
-                          progressRepo.setDisableEndOfLevelActivity(val);
-                        },
-                        theme: theme,
-                      ),
-                      _settingToggleRow(
                         icon: Icons.skip_next_rounded,
                         title: 'ENABLE SKIP LEVEL BUTTON',
                         subtitle: 'Show skip level button on level fail',
@@ -630,6 +618,18 @@ class SettingsView extends ConsumerWidget {
                         onChanged: (val) {
                           if (val) HapticService.lightImpact();
                           progressRepo.setSkipLevelEnabled(val);
+                        },
+                        theme: theme,
+                      ),
+                      _settingToggleRow(
+                        icon: Icons.celebration_rounded,
+                        title: 'ENABLE CONFETTI CELEBRATION',
+                        subtitle:
+                            'Show confetti animation on level complete',
+                        value: confettiCelebrationEnabled,
+                        onChanged: (val) {
+                          if (val) HapticService.lightImpact();
+                          progressRepo.setConfettiCelebrationEnabled(val);
                         },
                         theme: theme,
                       ),

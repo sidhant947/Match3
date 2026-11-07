@@ -9,7 +9,7 @@ class AppColors {
   static const Color charcoalElevated = Color(0xFF3A3A3C);
   static const Color borderCharcoal = Color(0xFF3A3A3C);
 
-  static const Color yellowCta = Color(0xFFFFB703);
+  static const Color offWhiteCta = Color(0xFFF5F5F7);
   static const Color orangeAccent = Color(0xFFFF8523);
   static const Color redAccent = Color(0xFFFF4D4D);
   static const Color greenAccent = Color(0xFF4ECCA3);

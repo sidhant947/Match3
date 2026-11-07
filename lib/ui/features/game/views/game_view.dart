@@ -307,7 +307,8 @@ class _GameViewState extends ConsumerState<GameView> {
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             final twistHeight = widget.isTwistMode ? 64.0 : 0.0;
-                            final maxBoardHeight = constraints.maxHeight - twistHeight - 8.0;
+                            const bannerHeight = 40.0;
+                            final maxBoardHeight = constraints.maxHeight - twistHeight - bannerHeight - 12.0;
                             final maxBoardWidth = constraints.maxWidth - 24.0;
                             final boardDimension = max(0.0, min(maxBoardWidth, maxBoardHeight));
 
@@ -315,43 +316,44 @@ class _GameViewState extends ConsumerState<GameView> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 SizedBox(
+                                  height: bannerHeight,
+                                  child: Center(
+                                    child: IgnorePointer(
+                                      child: _ComboBannerWidget(comboCount: state.comboCount),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                SizedBox(
                                   width: boardDimension,
                                   height: boardDimension,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Listener(
-                                        onPointerDown: (event) {
-                                          _pointerStartPos = event.localPosition;
-                                          _hasSwiped = false;
-                                        },
-                                        onPointerMove: (event) {
-                                          if (_pointerStartPos == null) return;
-                                          final delta = event.localPosition - _pointerStartPos!;
-                                          if (widget.isTwistMode) {
-                                            if (delta.distance > 10) {
-                                              _hasSwiped = true;
-                                              _game.handleTwistDrag(event.localPosition);
-                                            }
-                                          } else {
-                                            if (!_hasSwiped && delta.distance > 20) {
-                                              _hasSwiped = true;
-                                              _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
-                                            }
-                                          }
-                                        },
-                                        onPointerUp: (event) {
-                                          if (!_hasSwiped && _pointerStartPos != null) {
-                                            _game.handleTapAt(_pointerStartPos!);
-                                          }
-                                          _pointerStartPos = null;
-                                        },
-                                        child: GameWidget(game: _game),
-                                      ),
-                                      IgnorePointer(
-                                        child: _ComboBannerWidget(comboCount: state.comboCount),
-                                      ),
-                                    ],
+                                  child: Listener(
+                                    onPointerDown: (event) {
+                                      _pointerStartPos = event.localPosition;
+                                      _hasSwiped = false;
+                                    },
+                                    onPointerMove: (event) {
+                                      if (_pointerStartPos == null) return;
+                                      final delta = event.localPosition - _pointerStartPos!;
+                                      if (widget.isTwistMode) {
+                                        if (delta.distance > 10) {
+                                          _hasSwiped = true;
+                                          _game.handleTwistDrag(event.localPosition);
+                                        }
+                                      } else {
+                                        if (!_hasSwiped && delta.distance > 20) {
+                                          _hasSwiped = true;
+                                          _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
+                                        }
+                                      }
+                                    },
+                                    onPointerUp: (event) {
+                                      if (!_hasSwiped && _pointerStartPos != null) {
+                                        _game.handleTapAt(_pointerStartPos!);
+                                      }
+                                      _pointerStartPos = null;
+                                    },
+                                    child: GameWidget(game: _game),
                                   ),
                                 ),
                                 if (widget.isTwistMode) ...[
@@ -429,6 +431,12 @@ class _GameViewState extends ConsumerState<GameView> {
                       currentLevel: state.levelNumber,
                       theme: theme,
                       skipLevelEnabled: _viewModel.progressRepository.cachedProgress.skipLevelEnabled,
+                    ),
+                  if (state.isGameOver && !widget.isZenMode && !widget.isTwistMode && isWin && _viewModel.progressRepository.cachedProgress.confettiCelebrationEnabled)
+                    const Positioned.fill(
+                      child: IgnorePointer(
+                        child: _ConfettiCelebrationWidget(),
+                      ),
                     ),
                 ],
               );
@@ -792,11 +800,12 @@ class _GameViewState extends ConsumerState<GameView> {
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 TangibleButton(
                   text: 'BUY ME A COFFEE',
                   isSecondary: true,
-                  height: 44,
+                  height: 40,
+                  fontSize: 15,
                   onPressed: () {
                     final Uri url = Uri.parse('https://ko-fi.com/sidhant947');
                     launchUrl(url, mode: LaunchMode.externalApplication).catchError((_) => false);
@@ -910,4 +919,179 @@ class _ComboBannerWidgetState extends State<_ComboBannerWidget> with SingleTicke
       },
     );
   }
+}
+
+class _ConfettiCelebrationWidget extends StatefulWidget {
+  const _ConfettiCelebrationWidget();
+
+  @override
+  State<_ConfettiCelebrationWidget> createState() => _ConfettiCelebrationWidgetState();
+}
+
+class _ConfettiParticle {
+  final double x;
+  final double y;
+  final double vx;
+  final double vy;
+  final double rotation;
+  final double rotationSpeed;
+  final double size;
+  final Color color;
+  final int shape;
+  final double swaySpeed;
+  final double swayAmount;
+
+  const _ConfettiParticle({
+    required this.x,
+    required this.y,
+    required this.vx,
+    required this.vy,
+    required this.rotation,
+    required this.rotationSpeed,
+    required this.size,
+    required this.color,
+    required this.shape,
+    required this.swaySpeed,
+    required this.swayAmount,
+  });
+}
+
+class _ConfettiCelebrationWidgetState extends State<_ConfettiCelebrationWidget> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final List<_ConfettiParticle> _particles;
+  static const _colors = [
+    Color(0xFFFFD700),
+    Color(0xFFFF4081),
+    Color(0xFF00E5FF),
+    Color(0xFF76FF03),
+    Color(0xFFFF9100),
+    Color(0xFFE040FB),
+    Color(0xFFFF5252),
+    Color(0xFF00B0FF),
+    Color(0xFFFFEA00),
+    Color(0xFF69F0AE),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final random = Random();
+    _particles = List.generate(130, (index) {
+      double startX;
+      double startY;
+      double vx;
+      double vy;
+
+      if (index < 45) {
+        startX = 0.05 + (random.nextDouble() * 0.1);
+        startY = 0.95;
+        final angle = -(pi * 0.15 + random.nextDouble() * pi * 0.35);
+        final speed = 450.0 + random.nextDouble() * 550.0;
+        vx = cos(angle) * speed;
+        vy = sin(angle) * speed;
+      } else if (index < 90) {
+        startX = 0.85 + (random.nextDouble() * 0.1);
+        startY = 0.95;
+        final angle = -(pi * 0.5 + random.nextDouble() * pi * 0.35);
+        final speed = 450.0 + random.nextDouble() * 550.0;
+        vx = cos(angle) * speed;
+        vy = sin(angle) * speed;
+      } else {
+        startX = random.nextDouble();
+        startY = -0.05 - (random.nextDouble() * 0.2);
+        vx = (random.nextDouble() - 0.5) * 160.0;
+        vy = 80.0 + random.nextDouble() * 220.0;
+      }
+
+      return _ConfettiParticle(
+        x: startX,
+        y: startY,
+        vx: vx,
+        vy: vy,
+        rotation: random.nextDouble() * 2 * pi,
+        rotationSpeed: (random.nextDouble() - 0.5) * 14.0,
+        size: 6.0 + random.nextDouble() * 8.0,
+        color: _colors[random.nextInt(_colors.length)],
+        shape: random.nextInt(3),
+        swaySpeed: 2.0 + random.nextDouble() * 6.0,
+        swayAmount: 20.0 + random.nextDouble() * 40.0,
+      );
+    });
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        if (t >= 1.0) return const SizedBox.shrink();
+        final opacity = (1.0 - (t * 0.85)).clamp(0.0, 1.0);
+        return Opacity(
+          opacity: opacity,
+          child: CustomPaint(
+            painter: _ConfettiPainter(_particles, t),
+            size: Size.infinite,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ConfettiPainter extends CustomPainter {
+  final List<_ConfettiParticle> particles;
+  final double progress;
+
+  _ConfettiPainter(this.particles, this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final t = progress * 3.2;
+    const gravity = 550.0;
+
+    for (final p in particles) {
+      final sway = sin(t * p.swaySpeed) * p.swayAmount;
+      final currentX = (p.x * size.width) + (p.vx * t) + sway;
+      final currentY = (p.y * size.height) + (p.vy * t) + (0.5 * gravity * t * t);
+      final currentRot = p.rotation + (p.rotationSpeed * t);
+
+      final paint = Paint()..color = p.color;
+
+      canvas.save();
+      canvas.translate(currentX, currentY);
+      canvas.rotate(currentRot);
+      final flip = cos(currentRot * 1.5).abs().clamp(0.15, 1.0);
+      canvas.scale(flip, 1.0);
+
+      if (p.shape == 0) {
+        canvas.drawCircle(Offset.zero, p.size / 2, paint);
+      } else if (p.shape == 1) {
+        canvas.drawRect(
+          Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size * 0.55),
+          paint,
+        );
+      } else {
+        canvas.drawRect(
+          Rect.fromCenter(center: Offset.zero, width: p.size * 1.5, height: p.size * 0.35),
+          paint,
+        );
+      }
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) => oldDelegate.progress != progress;
 }

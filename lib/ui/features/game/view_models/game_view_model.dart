@@ -140,7 +140,7 @@ class GameViewModel extends ChangeNotifier {
       if (newTime <= 0) {
         timer.cancel();
         final isWin = !_isTimeAttack && _currentGoal.isCompleted;
-        final stars = isWin ? calculateStars(_state.score) : (_isTimeAttack ? calculateStars(_state.score) : 0);
+        final stars = isWin ? calculateStars(_state.score, isWin: true) : (_isTimeAttack ? calculateStars(_state.score) : 0);
         _state = _state.copyWith(
           timeLeft: 0,
           isGameOver: true,
@@ -160,11 +160,40 @@ class GameViewModel extends ChangeNotifier {
     });
   }
 
-  int calculateStars(int score) {
-    if (score >= _levelConfig.star3Score) return 3;
-    if (score >= _levelConfig.star2Score) return 2;
-    if (score >= _levelConfig.star1Score) return 1;
-    return 1;
+  int calculateStars(int score, {int? movesLeft, bool? isWin}) {
+    final effectiveWin = isWin ?? _currentGoal.isCompleted;
+    int stars = 0;
+    if (score >= _levelConfig.star3Score) {
+      stars = 3;
+    } else if (score >= _levelConfig.star2Score) {
+      stars = 2;
+    } else if (score >= _levelConfig.star1Score) {
+      stars = 1;
+    } else if (effectiveWin) {
+      stars = 1;
+    }
+
+    if (effectiveWin) {
+      final totalMoves = _levelConfig.moves;
+      final currentMovesLeft = movesLeft ?? _state.movesLeft;
+      if (!_levelConfig.isTimed && totalMoves > 0 && totalMoves != 999) {
+        if (currentMovesLeft >= (totalMoves * 0.4).ceil()) {
+          stars = max(stars, 3);
+        } else if (currentMovesLeft >= (totalMoves * 0.2).ceil()) {
+          stars = max(stars, 2);
+        }
+      } else if (_levelConfig.isTimed) {
+        final totalTime = _levelConfig.timeLimit ?? 60;
+        final currentTimeLeft = _state.timeLeft;
+        if (currentTimeLeft >= (totalTime * 0.4).ceil()) {
+          stars = max(stars, 3);
+        } else if (currentTimeLeft >= (totalTime * 0.2).ceil()) {
+          stars = max(stars, 2);
+        }
+      }
+    }
+
+    return stars;
   }
 
   List<String> _getAvailableFruits(int count) {
@@ -674,28 +703,9 @@ class GameViewModel extends ChangeNotifier {
     }
 
     final isGoalCompleted = _currentGoal.isCompleted;
-    if (!_isZenMode && !_isTwistMode && !_levelConfig.isTimed && isGoalCompleted && _state.movesLeft > 0) {
-      if (progressRepository.cachedProgress.disableEndOfLevelActivity) {
-        final bonusScore = _state.movesLeft * 1000;
-        final finalScore = _state.score + bonusScore;
-        final finalStars = calculateStars(finalScore);
-        _state = _state.copyWith(
-          score: finalScore,
-          movesLeft: 0,
-          isGameOver: true,
-          starsEarned: finalStars,
-        );
-        await progressRepository.completeLevel(
-          _state.levelNumber,
-          finalStars,
-        );
-        notifyListeners();
-      } else {
-        await _triggerSugarCrush();
-      }
-    } else if (!_isZenMode && !_isTwistMode && ((_levelConfig.isTimed ? _state.timeLeft <= 0 : _state.movesLeft <= 0) || isGoalCompleted)) {
+    if (!_isZenMode && !_isTwistMode && ((_levelConfig.isTimed ? _state.timeLeft <= 0 : _state.movesLeft <= 0) || isGoalCompleted)) {
       _timeAttackTimer?.cancel();
-      final finalStars = isGoalCompleted ? calculateStars(_state.score) : 0;
+      final finalStars = isGoalCompleted ? calculateStars(_state.score, isWin: true) : 0;
       _state = _state.copyWith(
         isGameOver: true,
         starsEarned: finalStars,
@@ -710,95 +720,6 @@ class GameViewModel extends ChangeNotifier {
     } else {
       await _checkAndPerformShuffleIfNeeded();
     }
-  }
-
-  Future<void> _triggerSugarCrush() async {
-    _state = _state.copyWith(isSugarCrush: true);
-    notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 1000));
-
-    final createdSpecialIds = <String>[];
-
-    while (_state.movesLeft > 0) {
-      final candidates = _state.tiles.where((t) => t.type == TileType.normal && !t.isFrozen && !createdSpecialIds.contains(t.id)).toList();
-      if (candidates.isEmpty) break;
-
-      final target = candidates[_random.nextInt(candidates.length)];
-      final rand = _random.nextInt(3);
-      final specialType = rand == 0
-          ? TileType.stripedHorizontal
-          : (rand == 1 ? TileType.stripedVertical : TileType.wrapped);
-
-      createdSpecialIds.add(target.id);
-
-      final transformedTiles = _state.tiles.map((t) {
-        if (t.id == target.id) {
-          return t.copyWith(type: specialType);
-        }
-        return t;
-      }).toList();
-
-      final newScore = _state.score + 500;
-      final newStars = calculateStars(newScore);
-
-      _state = _state.copyWith(
-        movesLeft: _state.movesLeft - 1,
-        tiles: transformedTiles,
-        score: newScore,
-        starsEarned: newStars,
-      );
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 280));
-    }
-
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    for (final specialId in createdSpecialIds) {
-      final tile = _state.tiles.where((t) => t.id == specialId).firstOrNull;
-      if (tile == null || tile.type == TileType.normal) continue;
-
-      final exploded = _resolveExplosions([tile], _state.tiles);
-      final explodedIds = exploded.map((e) => e.id).toSet();
-
-      final destroyedTiles = _state.tiles.where((t) => explodedIds.contains(t.id)).toList();
-      final remainingJelly = Set<String>.from(_state.jellyTiles);
-      for (final t in destroyedTiles) {
-        remainingJelly.remove('${t.row}_${t.col}');
-      }
-
-      final scoreGain = explodedIds.length * 80;
-      final updatedScore = _state.score + scoreGain;
-      final remaining = _state.tiles.where((t) => !explodedIds.contains(t.id)).toList();
-
-      _state = _state.copyWith(
-        tiles: remaining,
-        score: updatedScore,
-        starsEarned: calculateStars(updatedScore),
-        jellyTiles: remainingJelly,
-        comboCount: _state.comboCount + 1,
-      );
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 320));
-
-      final cascadedTiles = _cascadeBoard(_state.tiles);
-      _state = _state.copyWith(tiles: cascadedTiles);
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 380));
-    }
-
-    await _processMatchesAndCascade();
-
-    final finalStars = calculateStars(_state.score);
-    _state = _state.copyWith(
-      isGameOver: true,
-      isSugarCrush: false,
-      starsEarned: finalStars,
-    );
-    await progressRepository.completeLevel(
-      _state.levelNumber,
-      finalStars,
-    );
-    notifyListeners();
   }
 
   Future<void> _checkAndPerformShuffleIfNeeded() async {

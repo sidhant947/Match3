@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:match3/domain/models/level_generator.dart';
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/features/game/views/game_view.dart';
@@ -95,36 +94,22 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
                     _backButton(theme),
                     Expanded(
                       child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'LEVELS',
-                              style: TextStyle(
-                                fontFamily: 'BebasNeue',
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                color: theme.textPrimary,
-                                letterSpacing: 1.5,
-                                shadows: const [
-                                  Shadow(
-                                    offset: Offset(0, 2),
-                                    blurRadius: 4.0,
-                                    color: Colors.black45,
-                                  ),
-                                ],
+                        child: Text(
+                          'LEVELS',
+                          style: TextStyle(
+                            fontFamily: 'BebasNeue',
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: theme.textPrimary,
+                            letterSpacing: 1.5,
+                            shadows: const [
+                              Shadow(
+                                offset: Offset(0, 2),
+                                blurRadius: 4.0,
+                                color: Colors.black45,
                               ),
-                            ),
-                            Text(
-                              'CHAPTER ${((highestUnlocked - 1) ~/ LevelGenerator.chapterSize) + 1} • LEVEL $highestUnlocked',
-                              style: TextStyle(
-                                fontFamily: 'BebasNeue',
-                                fontSize: 13,
-                                color: theme.primaryAccent,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -175,11 +160,6 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
     required bool isLocked,
     required AppThemeSkin theme,
   }) {
-    final isBoss = levelNumber % LevelGenerator.chapterSize == 0;
-    final isMilestone = levelNumber % 100 == 0;
-    final disableTimed = ref.watch(homeViewModelProvider).progress?.disableTimedChallenges ?? false;
-    final isTimed = !disableTimed && levelNumber % 5 == 0;
-
     List<Color> gradientColors;
     Color borderColor;
     Widget content;
@@ -187,77 +167,11 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
 
     if (isCompleted) {
       final stars = ref.read(homeViewModelProvider).progress?.levelStars[levelNumber.toString()] ?? 0;
-      if (isMilestone) {
-        gradientColors = [theme.primaryAccent, theme.primaryAccent.withValues(alpha: 0.7)];
-        borderColor = theme.primaryAccent;
-      } else if (isBoss) {
-        gradientColors = [const Color(0xFFFF7043), const Color(0xFFD84315)];
-        borderColor = const Color(0xFFFFAB91);
-      } else {
-        gradientColors = [theme.cardBg, theme.surfaceDark];
-        borderColor = theme.primaryAccent.withValues(alpha: 0.7);
-      }
+      gradientColors = [theme.cardBg, theme.surfaceDark];
+      borderColor = theme.primaryAccent.withValues(alpha: 0.7);
 
-      content = Stack(
-        alignment: Alignment.center,
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  '$levelNumber',
-                  style: TextStyle(
-                    fontFamily: 'BebasNeue',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: theme.textPrimary,
-                    shadows: const [
-                      Shadow(
-                        offset: Offset(0, 1.5),
-                        blurRadius: 2.0,
-                        color: Colors.black45,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (starIdx) {
-                  final active = starIdx < stars;
-                  return Icon(
-                    active ? Icons.star_rounded : Icons.star_border_rounded,
-                    size: 13,
-                    color: active ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
-                  );
-                }),
-              ),
-            ],
-          ),
-          if (isBoss)
-            const Positioned(
-              top: 2,
-              right: 2,
-              child: Text('👑', style: TextStyle(fontSize: 10)),
-            )
-          else if (isTimed)
-            const Positioned(
-              top: 2,
-              right: 2,
-              child: Text('⏱️', style: TextStyle(fontSize: 10)),
-            ),
-        ],
-      );
-    } else if (isCurrent) {
-      gradientColors = [theme.primaryAccent.withValues(alpha: 0.88), theme.primaryAccent];
-      borderColor = theme.primaryAccent;
-      final textColor = theme.primaryAccent.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-
-      content = Stack(
-        alignment: Alignment.center,
+      content = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -265,46 +179,64 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               '$levelNumber',
               style: TextStyle(
                 fontFamily: 'BebasNeue',
-                fontSize: 26,
-                color: textColor,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
+                color: theme.textPrimary,
                 shadows: const [
                   Shadow(
-                    offset: Offset(0, 2),
+                    offset: Offset(0, 1.5),
                     blurRadius: 2.0,
-                    color: Colors.black54,
+                    color: Colors.black45,
                   ),
                 ],
               ),
             ),
           ),
-          if (isBoss)
-            const Positioned(
-              top: 2,
-              right: 2,
-              child: Text('👑', style: TextStyle(fontSize: 10)),
-            )
-          else if (isTimed)
-            const Positioned(
-              top: 2,
-              right: 2,
-              child: Text('⏱️', style: TextStyle(fontSize: 10)),
-            ),
+          const SizedBox(height: 2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(3, (starIdx) {
+              final active = starIdx < stars;
+              return Icon(
+                active ? Icons.star_rounded : Icons.star_border_rounded,
+                size: 13,
+                color: active ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
+              );
+            }),
+          ),
         ],
+      );
+    } else if (isCurrent) {
+      gradientColors = [theme.primaryAccent.withValues(alpha: 0.88), theme.primaryAccent];
+      borderColor = theme.primaryAccent;
+      final textColor = theme.primaryAccent.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+
+      content = FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          '$levelNumber',
+          style: TextStyle(
+            fontFamily: 'BebasNeue',
+            fontSize: 26,
+            color: textColor,
+            fontWeight: FontWeight.w900,
+            shadows: const [
+              Shadow(
+                offset: Offset(0, 2),
+                blurRadius: 2.0,
+                color: Colors.black54,
+              ),
+            ],
+          ),
+        ),
       );
     } else {
       gradientColors = [theme.cardBg, theme.surfaceDark];
-      borderColor = isBoss ? theme.primaryAccent.withValues(alpha: 0.5) : theme.cardBorder;
+      borderColor = theme.cardBorder;
       content = Icon(
-        isBoss
-            ? Icons.workspace_premium_rounded
-            : (isTimed ? Icons.timer_outlined : Icons.lock_outline_rounded),
+        Icons.lock_outline_rounded,
         size: 20,
-        color: isBoss
-            ? theme.primaryAccent
-            : (isTimed
-                ? theme.primaryAccent.withValues(alpha: 0.7)
-                : theme.textSecondary.withValues(alpha: 0.5)),
+        color: theme.textSecondary.withValues(alpha: 0.5),
       );
     }
 
@@ -331,7 +263,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
-            width: isBoss ? 2.5 : 2.0,
+            width: 2.0,
           ),
           boxShadow: [
             BoxShadow(

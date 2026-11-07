@@ -16,8 +16,8 @@ class UserProgress {
     this.crateEmoji = '📦',
     this.colorBombEmoji = '🍭',
     this.disableTimedChallenges = false,
-    this.disableEndOfLevelActivity = true,
     this.skipLevelEnabled = false,
+    this.confettiCelebrationEnabled = false,
   });
 
   final int currentLevel;
@@ -33,10 +33,8 @@ class UserProgress {
   final String crateEmoji;
   final String colorBombEmoji;
   final bool disableTimedChallenges;
-  final bool disableEndOfLevelActivity;
   final bool skipLevelEnabled;
-
-  bool get disableEndOfLevelAnimation => disableEndOfLevelActivity;
+  final bool confettiCelebrationEnabled;
 
   static const Map<String, List<String>> presetMap = {
     'fruits': ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'],
@@ -66,9 +64,8 @@ class UserProgress {
     String? crateEmoji,
     String? colorBombEmoji,
     bool? disableTimedChallenges,
-    bool? disableEndOfLevelActivity,
-    bool? disableEndOfLevelAnimation,
     bool? skipLevelEnabled,
+    bool? confettiCelebrationEnabled,
   }) {
     return UserProgress(
       currentLevel: currentLevel ?? this.currentLevel,
@@ -84,8 +81,8 @@ class UserProgress {
       crateEmoji: crateEmoji ?? this.crateEmoji,
       colorBombEmoji: colorBombEmoji ?? this.colorBombEmoji,
       disableTimedChallenges: disableTimedChallenges ?? this.disableTimedChallenges,
-      disableEndOfLevelActivity: disableEndOfLevelActivity ?? disableEndOfLevelAnimation ?? this.disableEndOfLevelActivity,
       skipLevelEnabled: skipLevelEnabled ?? this.skipLevelEnabled,
+      confettiCelebrationEnabled: confettiCelebrationEnabled ?? this.confettiCelebrationEnabled,
     );
   }
 

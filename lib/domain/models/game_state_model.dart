@@ -23,7 +23,6 @@ class GameStateModel {
   final Set<String> jellyTiles;
   final Set<String> hintTileIds;
   final bool isShuffling;
-  final bool isSugarCrush;
   final bool isTimeAttack;
   final bool isTwistMode;
   final int timeLeft;
@@ -53,7 +52,6 @@ class GameStateModel {
     this.jellyTiles = const {},
     this.hintTileIds = const {},
     this.isShuffling = false,
-    this.isSugarCrush = false,
     this.isTimeAttack = false,
     this.isTwistMode = false,
     this.timeLeft = 60,
@@ -87,7 +85,6 @@ class GameStateModel {
     Set<String>? jellyTiles,
     Set<String>? hintTileIds,
     bool? isShuffling,
-    bool? isSugarCrush,
     bool? isTimeAttack,
     bool? isTwistMode,
     int? timeLeft,
@@ -112,7 +109,6 @@ class GameStateModel {
       jellyTiles: jellyTiles ?? this.jellyTiles,
       hintTileIds: hintTileIds ?? this.hintTileIds,
       isShuffling: isShuffling ?? this.isShuffling,
-      isSugarCrush: isSugarCrush ?? this.isSugarCrush,
       isTimeAttack: isTimeAttack ?? this.isTimeAttack,
       isTwistMode: isTwistMode ?? this.isTwistMode,
       timeLeft: timeLeft ?? this.timeLeft,

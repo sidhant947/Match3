@@ -86,16 +86,14 @@ class ProgressRepository extends ChangeNotifier {
     await saveProgress(current.copyWith(disableTimedChallenges: disabled));
   }
 
-  Future<void> setDisableEndOfLevelActivity(bool disabled) async {
-    final current = await getProgress();
-    await saveProgress(current.copyWith(disableEndOfLevelActivity: disabled));
-  }
-
-  Future<void> setDisableEndOfLevelAnimation(bool disabled) => setDisableEndOfLevelActivity(disabled);
-
   Future<void> setSkipLevelEnabled(bool enabled) async {
     final current = await getProgress();
     await saveProgress(current.copyWith(skipLevelEnabled: enabled));
+  }
+
+  Future<void> setConfettiCelebrationEnabled(bool enabled) async {
+    final current = await getProgress();
+    await saveProgress(current.copyWith(confettiCelebrationEnabled: enabled));
   }
 
   Future<void> skipLevel(int levelNumber) async {

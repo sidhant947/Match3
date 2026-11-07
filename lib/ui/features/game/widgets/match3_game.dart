@@ -330,7 +330,7 @@ class Match3Game extends FlameGame {
     super.render(canvas);
     if (cellSize <= 0) return;
 
-    final accentColor = themeSkin?.primaryAccent ?? const Color(0xFFFFCE31);
+    final accentColor = themeSkin?.primaryAccent ?? const Color(0xFFF5F5F7);
     final cellBgColor = themeSkin?.cardBg.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.05);
 
     final cellBgPaint = Paint()
