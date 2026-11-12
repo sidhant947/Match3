@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:match3/domain/models/tile_model.dart';
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
@@ -100,44 +100,64 @@ class Match3Game extends FlameGame {
     final currentTiles = viewModel.state.tiles;
     final activeIds = currentTiles.map((t) => t.id).toSet();
 
-    final toRemove = _components.keys.where((id) => !activeIds.contains(id)).toList();
-    var hasSpecialMatch = toRemove.any((id) => _components[id]?.type != TileType.normal);
-    hasSpecialMatch = hasSpecialMatch || currentTiles.any(
-      (tile) => tile.type != TileType.normal &&
-          tile.type != TileType.crate &&
-          !_knownSpecialIds.contains(tile.id),
+    final toRemove = _components.keys
+        .where((id) => !activeIds.contains(id))
+        .toList();
+    var hasSpecialMatch = toRemove.any(
+      (id) => _components[id]?.type != TileType.normal,
     );
+    hasSpecialMatch =
+        hasSpecialMatch ||
+        currentTiles.any(
+          (tile) =>
+              tile.type != TileType.normal &&
+              tile.type != TileType.crate &&
+              !_knownSpecialIds.contains(tile.id),
+        );
     for (final id in toRemove) {
       final comp = _components[id];
       if (comp != null) {
         comp.isDestroying = true;
-        _spawnMatchParticles(comp.position.x + cellSize / 2, comp.position.y + cellSize / 2, comp.emoji);
-        _spawnScorePopup(comp.position.x + cellSize / 2, comp.position.y + cellSize / 2);
+        _spawnMatchParticles(
+          comp.position.x + cellSize / 2,
+          comp.position.y + cellSize / 2,
+          comp.emoji,
+        );
+        _spawnScorePopup(
+          comp.position.x + cellSize / 2,
+          comp.position.y + cellSize / 2,
+        );
 
         if (comp.type == TileType.stripedHorizontal) {
-          add(LaserBeamComponent(
-            x: startX + (cellSize * viewModel.state.cols) / 2,
-            y: startY + comp.row * cellSize + cellSize / 2,
-            width: cellSize * viewModel.state.cols,
-            height: cellSize * 0.45,
-            isHorizontal: true,
-          ));
+          add(
+            LaserBeamComponent(
+              x: startX + (cellSize * viewModel.state.cols) / 2,
+              y: startY + comp.row * cellSize + cellSize / 2,
+              width: cellSize * viewModel.state.cols,
+              height: cellSize * 0.45,
+              isHorizontal: true,
+            ),
+          );
           triggerShake(3.0);
         } else if (comp.type == TileType.stripedVertical) {
-          add(LaserBeamComponent(
-            x: startX + comp.col * cellSize + cellSize / 2,
-            y: startY + (cellSize * viewModel.state.rows) / 2,
-            width: cellSize * 0.45,
-            height: cellSize * viewModel.state.rows,
-            isHorizontal: false,
-          ));
+          add(
+            LaserBeamComponent(
+              x: startX + comp.col * cellSize + cellSize / 2,
+              y: startY + (cellSize * viewModel.state.rows) / 2,
+              width: cellSize * 0.45,
+              height: cellSize * viewModel.state.rows,
+              isHorizontal: false,
+            ),
+          );
           triggerShake(3.0);
         } else if (comp.type == TileType.wrapped) {
-          add(ShockwaveComponent(
-            x: comp.position.x + cellSize / 2,
-            y: comp.position.y + cellSize / 2,
-            maxRadius: cellSize * 1.8,
-          ));
+          add(
+            ShockwaveComponent(
+              x: comp.position.x + cellSize / 2,
+              y: comp.position.y + cellSize / 2,
+              maxRadius: cellSize * 1.8,
+            ),
+          );
           triggerShake(4.5);
         } else if (comp.type == TileType.colorBomb) {
           triggerShake(6.0);
@@ -154,7 +174,14 @@ class Match3Game extends FlameGame {
     }
     _knownSpecialIds
       ..clear()
-      ..addAll(currentTiles.where((tile) => tile.type != TileType.normal && tile.type != TileType.crate).map((tile) => tile.id));
+      ..addAll(
+        currentTiles
+            .where(
+              (tile) =>
+                  tile.type != TileType.normal && tile.type != TileType.crate,
+            )
+            .map((tile) => tile.id),
+      );
 
     for (final tile in currentTiles) {
       final existing = _components[tile.id];
@@ -212,7 +239,8 @@ class Match3Game extends FlameGame {
   }
 
   void handleTapAt(Offset localPosition) {
-    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver)
+      return;
     viewModel.clearHints();
 
     if (viewModel.isTwistMode) {
@@ -223,7 +251,10 @@ class Match3Game extends FlameGame {
     final col = ((localPosition.dx - startX) / cellSize).floor();
     final row = ((localPosition.dy - startY) / cellSize).floor();
 
-    if (row >= 0 && row < viewModel.state.rows && col >= 0 && col < viewModel.state.cols) {
+    if (row >= 0 &&
+        row < viewModel.state.rows &&
+        col >= 0 &&
+        col < viewModel.state.cols) {
       if (selectedRow == null || selectedCol == null) {
         selectedRow = row;
         selectedCol = col;
@@ -253,10 +284,17 @@ class Match3Game extends FlameGame {
   }
 
   void handleTwistDrag(Offset localPosition) {
-    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver)
+      return;
     viewModel.clearHints();
-    final c = ((localPosition.dx - startX) / cellSize - 1).round().clamp(0, viewModel.state.cols - 2);
-    final r = ((localPosition.dy - startY) / cellSize - 1).round().clamp(0, viewModel.state.rows - 2);
+    final c = ((localPosition.dx - startX) / cellSize - 1).round().clamp(
+      0,
+      viewModel.state.cols - 2,
+    );
+    final r = ((localPosition.dy - startY) / cellSize - 1).round().clamp(
+      0,
+      viewModel.state.rows - 2,
+    );
     if (r != twistRotatorRow || c != twistRotatorCol) {
       twistRotatorRow = r;
       twistRotatorCol = c;
@@ -270,7 +308,8 @@ class Match3Game extends FlameGame {
     final currentTop = startY + twistRotatorRow * cellSize;
     final currentBottom = currentTop + cellSize * 2;
 
-    final isInsideCurrent = localPosition.dx >= currentLeft &&
+    final isInsideCurrent =
+        localPosition.dx >= currentLeft &&
         localPosition.dx <= currentRight &&
         localPosition.dy >= currentTop &&
         localPosition.dy <= currentBottom;
@@ -278,8 +317,14 @@ class Match3Game extends FlameGame {
     if (isInsideCurrent) {
       twistCurrent();
     } else {
-      final c = ((localPosition.dx - startX) / cellSize - 1).round().clamp(0, viewModel.state.cols - 2);
-      final r = ((localPosition.dy - startY) / cellSize - 1).round().clamp(0, viewModel.state.rows - 2);
+      final c = ((localPosition.dx - startX) / cellSize - 1).round().clamp(
+        0,
+        viewModel.state.cols - 2,
+      );
+      final r = ((localPosition.dy - startY) / cellSize - 1).round().clamp(
+        0,
+        viewModel.state.rows - 2,
+      );
       twistRotatorRow = r;
       twistRotatorCol = c;
       HapticService.selectionClick();
@@ -287,7 +332,8 @@ class Match3Game extends FlameGame {
   }
 
   void twistCurrent() {
-    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver)
+      return;
     viewModel.clearHints();
     _rotatorComponent?.spinAngle = 2 * pi;
     HapticService.mediumImpact();
@@ -296,7 +342,8 @@ class Match3Game extends FlameGame {
 
   void handleSwipeAt(Offset startPos, Offset endPos) {
     if (viewModel.isTwistMode) return;
-    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver) return;
+    if (cellSize <= 0 || viewModel.isProcessing || viewModel.state.isGameOver)
+      return;
     viewModel.clearHints();
 
     selectedRow = null;
@@ -305,7 +352,11 @@ class Match3Game extends FlameGame {
     final col = ((startPos.dx - startX) / cellSize).floor();
     final row = ((startPos.dy - startY) / cellSize).floor();
 
-    if (row < 0 || row >= viewModel.state.rows || col < 0 || col >= viewModel.state.cols) return;
+    if (row < 0 ||
+        row >= viewModel.state.rows ||
+        col < 0 ||
+        col >= viewModel.state.cols)
+      return;
 
     final dx = endPos.dx - startPos.dx;
     final dy = endPos.dy - startPos.dy;
@@ -319,7 +370,10 @@ class Match3Game extends FlameGame {
       targetRow += dy > 0 ? 1 : -1;
     }
 
-    if (targetRow >= 0 && targetRow < viewModel.state.rows && targetCol >= 0 && targetCol < viewModel.state.cols) {
+    if (targetRow >= 0 &&
+        targetRow < viewModel.state.rows &&
+        targetCol >= 0 &&
+        targetCol < viewModel.state.cols) {
       HapticService.lightImpact();
       viewModel.swapTiles(row, col, targetRow, targetCol);
     }
@@ -331,7 +385,9 @@ class Match3Game extends FlameGame {
     if (cellSize <= 0) return;
 
     final accentColor = themeSkin?.primaryAccent ?? const Color(0xFFF5F5F7);
-    final cellBgColor = themeSkin?.cardBg.withValues(alpha: 0.18) ?? Colors.white.withValues(alpha: 0.05);
+    final cellBgColor =
+        themeSkin?.cardBg.withValues(alpha: 0.18) ??
+        Colors.white.withValues(alpha: 0.05);
 
     final cellBgPaint = Paint()
       ..color = cellBgColor
@@ -365,7 +421,9 @@ class Match3Game extends FlameGame {
 
         canvas.drawRRect(
           RRect.fromRectAndRadius(cellRect, const Radius.circular(10)),
-          isSelected ? selectedCellPaint : (hasJelly ? jellyBgPaint : cellBgPaint),
+          isSelected
+              ? selectedCellPaint
+              : (hasJelly ? jellyBgPaint : cellBgPaint),
         );
         if (isSelected) {
           canvas.drawRRect(
@@ -482,7 +540,8 @@ class FruitComponent extends PositionComponent {
 
     if (_isBouncing) {
       _bounceTimer += dt;
-      final bounceOffset = sin(_bounceTimer * 18.0) * 12.0 * exp(-_bounceTimer * 6.0);
+      final bounceOffset =
+          sin(_bounceTimer * 18.0) * 12.0 * exp(-_bounceTimer * 6.0);
       position = Vector2(targetX, targetY + bounceOffset);
       if (_bounceTimer >= 0.8) {
         _isBouncing = false;
@@ -549,9 +608,19 @@ class FruitComponent extends PositionComponent {
         ..color = const Color(0xFFE0F7FF).withValues(alpha: 0.9 * opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5;
-      final iceRect = Rect.fromCenter(center: Offset.zero, width: size.x * 0.88, height: size.y * 0.88);
-      canvas.drawRRect(RRect.fromRectAndRadius(iceRect, const Radius.circular(8)), iceFill);
-      canvas.drawRRect(RRect.fromRectAndRadius(iceRect, const Radius.circular(8)), iceBorder);
+      final iceRect = Rect.fromCenter(
+        center: Offset.zero,
+        width: size.x * 0.88,
+        height: size.y * 0.88,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(iceRect, const Radius.circular(8)),
+        iceFill,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(iceRect, const Radius.circular(8)),
+        iceBorder,
+      );
     }
 
     if (type == TileType.crate) {
@@ -559,8 +628,15 @@ class FruitComponent extends PositionComponent {
         ..color = const Color(0xFF8D6E63).withValues(alpha: 0.85 * opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
-      final crateRect = Rect.fromCenter(center: Offset.zero, width: size.x * 0.82, height: size.y * 0.82);
-      canvas.drawRRect(RRect.fromRectAndRadius(crateRect, const Radius.circular(6)), cratePaint);
+      final crateRect = Rect.fromCenter(
+        center: Offset.zero,
+        width: size.x * 0.82,
+        height: size.y * 0.82,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(crateRect, const Radius.circular(6)),
+        cratePaint,
+      );
     }
 
     if (type == TileType.stripedHorizontal) {
@@ -568,13 +644,21 @@ class FruitComponent extends PositionComponent {
         ..color = Colors.white.withValues(alpha: 0.9 * opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.5;
-      canvas.drawLine(Offset(-size.x * 0.38, 0), Offset(size.x * 0.38, 0), stripePaint);
+      canvas.drawLine(
+        Offset(-size.x * 0.38, 0),
+        Offset(size.x * 0.38, 0),
+        stripePaint,
+      );
     } else if (type == TileType.stripedVertical) {
       final stripePaint = Paint()
         ..color = Colors.white.withValues(alpha: 0.9 * opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.5;
-      canvas.drawLine(Offset(0, -size.y * 0.38), Offset(0, size.y * 0.38), stripePaint);
+      canvas.drawLine(
+        Offset(0, -size.y * 0.38),
+        Offset(0, size.y * 0.38),
+        stripePaint,
+      );
     }
 
     canvas.restore();
@@ -594,8 +678,8 @@ class LaserBeamComponent extends PositionComponent {
     required double width,
     required double height,
     required this.isHorizontal,
-  })  : widthVal = width,
-        heightVal = height {
+  }) : widthVal = width,
+       heightVal = height {
     position = Vector2(x, y);
     size = Vector2(width, height);
     priority = 80;
@@ -621,7 +705,11 @@ class LaserBeamComponent extends PositionComponent {
       ..color = Colors.white.withValues(alpha: opacity)
       ..style = PaintingStyle.fill;
 
-    final rect = Rect.fromCenter(center: Offset.zero, width: widthVal, height: heightVal);
+    final rect = Rect.fromCenter(
+      center: Offset.zero,
+      width: widthVal,
+      height: heightVal,
+    );
     canvas.drawRect(rect, beamPaint);
     final coreRect = Rect.fromCenter(
       center: Offset.zero,
@@ -760,13 +848,11 @@ class ScorePopupComponent extends PositionComponent {
           fontFamily: 'BebasNeue',
           fontSize: max(1.0, size.x * 0.35),
           fontWeight: FontWeight.bold,
-          color: const Color(0xFFFFCE31).withValues(alpha: opacity.clamp(0.0, 1.0)),
+          color: const Color(
+            0xFFFFCE31,
+          ).withValues(alpha: opacity.clamp(0.0, 1.0)),
           shadows: const [
-            Shadow(
-              blurRadius: 3,
-              color: Colors.black54,
-              offset: Offset(1, 1),
-            )
+            Shadow(blurRadius: 3, color: Colors.black54, offset: Offset(1, 1)),
           ],
         ),
       ),
@@ -822,7 +908,6 @@ class TwistRotatorComponent extends PositionComponent {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     canvas.drawRRect(rrect, borderPaint);
-
 
     final hubCenter = Offset(cell, cell);
     final hubRadius = cell * 0.32;

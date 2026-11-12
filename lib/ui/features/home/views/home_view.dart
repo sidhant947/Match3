@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
@@ -100,7 +100,9 @@ class _HomeViewState extends ConsumerState<HomeView> {
           decoration: BoxDecoration(
             color: theme.cardBg,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: theme.cardBorder, width: 1.5)),
+            border: Border(
+              top: BorderSide(color: theme.cardBorder, width: 1.5),
+            ),
           ),
           child: SafeArea(
             top: false,
@@ -191,7 +193,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
           gradient: RadialGradient(
             center: const Alignment(0, -0.2),
             radius: 1.3,
-            colors: [theme.bgGradientStart, theme.bgGradientMiddle, theme.bgGradientEnd],
+            colors: [
+              theme.bgGradientStart,
+              theme.bgGradientMiddle,
+              theme.bgGradientEnd,
+            ],
             stops: const [0.0, 0.65, 1.0],
           ),
         ),
@@ -228,7 +234,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           icon: Icons.favorite_rounded,
                           iconColor: const Color(0xFFFF4D4D),
                           theme: theme,
-                          onTap: () => _launchUrl('https://ko-fi.com/sidhant947'),
+                          onTap: () =>
+                              _launchUrl('https://ko-fi.com/sidhant947'),
                         ),
                       ],
                     ),
@@ -240,8 +247,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   height: 110,
                   child: GemWidget(
                     gemType: GemType.values[_gemIndex % GemType.values.length],
-                    emoji: (state.progress?.activeEmojiSet != null && state.progress!.activeEmojiSet.isNotEmpty)
-                        ? state.progress!.activeEmojiSet[_gemIndex % state.progress!.activeEmojiSet.length]
+                    emoji:
+                        (state.progress?.activeEmojiSet != null &&
+                            state.progress!.activeEmojiSet.isNotEmpty)
+                        ? state.progress!.activeEmojiSet[_gemIndex %
+                              state.progress!.activeEmojiSet.length]
                         : null,
                   ),
                 ),

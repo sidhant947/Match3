@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/providers.dart';
@@ -14,47 +14,305 @@ class CustomEmojiPickerSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CustomEmojiPickerSheet> createState() => _CustomEmojiPickerSheetState();
+  ConsumerState<CustomEmojiPickerSheet> createState() =>
+      _CustomEmojiPickerSheetState();
 }
 
-class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet> with SingleTickerProviderStateMixin {
+class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
+    with SingleTickerProviderStateMixin {
   late List<String> _slots;
   int _selectedSlot = 0;
   late TabController _tabController;
   final TextEditingController _directInputController = TextEditingController();
 
-  static const List<String> _defaultFruits = ['🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓'];
+  static const List<String> _defaultFruits = [
+    '🍎',
+    '🫐',
+    '🍐',
+    '🍋',
+    '🍇',
+    '🍊',
+    '🍒',
+    '🍉',
+    '🍍',
+    '🍓',
+  ];
 
   static const Map<String, List<String>> _categories = {
     'Food': [
-      '🍎', '🫐', '🍐', '🍋', '🍇', '🍊', '🍒', '🍉', '🍍', '🍓', '🍑', '🥭', '🍌', '🍏',
-      '🍈', '🥝', '🥑', '🍆', '🥕', '🌽', '🌶️', '🥒', '🥦', '🍄', '🥜', '🌰', '🍞', '🥐',
-      '🥖', '🥨', '🧁', '🍰', '🎂', '🍩', '🍪', '🍫', '🍬', '🍭', '🍮', '🍯', '🍿', '🧃',
-      '🥤', '🍺', '🍻', '🍷', '🥂', '🍹', '🍕', '🍔', '🍟', '🌭', '🍿', '🥓', '🍳', '🧇',
+      '🍎',
+      '🫐',
+      '🍐',
+      '🍋',
+      '🍇',
+      '🍊',
+      '🍒',
+      '🍉',
+      '🍍',
+      '🍓',
+      '🍑',
+      '🥭',
+      '🍌',
+      '🍏',
+      '🍈',
+      '🥝',
+      '🥑',
+      '🍆',
+      '🥕',
+      '🌽',
+      '🌶️',
+      '🥒',
+      '🥦',
+      '🍄',
+      '🥜',
+      '🌰',
+      '🍞',
+      '🥐',
+      '🥖',
+      '🥨',
+      '🧁',
+      '🍰',
+      '🎂',
+      '🍩',
+      '🍪',
+      '🍫',
+      '🍬',
+      '🍭',
+      '🍮',
+      '🍯',
+      '🍿',
+      '🧃',
+      '🥤',
+      '🍺',
+      '🍻',
+      '🍷',
+      '🥂',
+      '🍹',
+      '🍕',
+      '🍔',
+      '🍟',
+      '🌭',
+      '🍿',
+      '🥓',
+      '🍳',
+      '🧇',
     ],
     'Animals': [
-      '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸',
-      '🐵', '🐔', '🐧', '🐦', '🐣', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝',
-      '🐛', '🦋', '🐌', '🐞', '🐜', '🕷️', '🦂', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐',
-      '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🦈', '🐊', '🦍', '🐘', '🦏', '🐪', '🦒',
+      '🐶',
+      '🐱',
+      '🐭',
+      '🐹',
+      '🐰',
+      '🦊',
+      '🐻',
+      '🐼',
+      '🐨',
+      '🐯',
+      '🦁',
+      '🐮',
+      '🐷',
+      '🐸',
+      '🐵',
+      '🐔',
+      '🐧',
+      '🐦',
+      '🐣',
+      '🦆',
+      '🦅',
+      '🦉',
+      '🦇',
+      '🐺',
+      '🐗',
+      '🐴',
+      '🦄',
+      '🐝',
+      '🐛',
+      '🦋',
+      '🐌',
+      '🐞',
+      '🐜',
+      '🕷️',
+      '🦂',
+      '🐍',
+      '🦎',
+      '🦖',
+      '🦕',
+      '🐙',
+      '🦑',
+      '🦐',
+      '🦞',
+      '🦀',
+      '🐡',
+      '🐠',
+      '🐟',
+      '🐬',
+      '🐳',
+      '🦈',
+      '🐊',
+      '🦍',
+      '🐘',
+      '🦏',
+      '🐪',
+      '🦒',
     ],
     'Faces': [
-      '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌',
-      '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓',
-      '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '😣', '😖', '😫', '😩',
-      '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰',
-      '🤡', '💩', '👻', '💀', '👽', '👾', '🤖', '🎃',
+      '😀',
+      '😃',
+      '😄',
+      '😁',
+      '😆',
+      '😅',
+      '😂',
+      '🤣',
+      '😊',
+      '😇',
+      '🙂',
+      '🙃',
+      '😉',
+      '😌',
+      '😍',
+      '🥰',
+      '😘',
+      '😗',
+      '😙',
+      '😚',
+      '😋',
+      '😛',
+      '😝',
+      '😜',
+      '🤪',
+      '🤨',
+      '🧐',
+      '🤓',
+      '😎',
+      '🤩',
+      '🥳',
+      '😏',
+      '😒',
+      '😞',
+      '😔',
+      '😟',
+      '😕',
+      '🙁',
+      '😣',
+      '😖',
+      '😫',
+      '😩',
+      '🥺',
+      '😢',
+      '😭',
+      '😤',
+      '😠',
+      '😡',
+      '🤬',
+      '🤯',
+      '😳',
+      '🥵',
+      '🥶',
+      '😱',
+      '😨',
+      '😰',
+      '🤡',
+      '💩',
+      '👻',
+      '💀',
+      '👽',
+      '👾',
+      '🤖',
+      '🎃',
     ],
     'Magic': [
-      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓',
-      '💗', '💖', '💘', '💝', '⭐', '🌟', '✨', '⚡', '💥', '🔥', '🌪️', '🌈', '☀️', '🌙',
-      '💫', '💎', '🔮', '🧿', '🍀', '🍁', '🍄', '🎯', '🎨', '🎭', '🎤', '🎧', '🎷', '🎸',
-      '🎹', '🎺', '🎻', '🎲', '♟️', '🎮', '🎰', '🧩',
+      '❤️',
+      '🧡',
+      '💛',
+      '💚',
+      '💙',
+      '💜',
+      '🖤',
+      '🤍',
+      '🤎',
+      '💔',
+      '❣️',
+      '💕',
+      '💞',
+      '💓',
+      '💗',
+      '💖',
+      '💘',
+      '💝',
+      '⭐',
+      '🌟',
+      '✨',
+      '⚡',
+      '💥',
+      '🔥',
+      '🌪️',
+      '🌈',
+      '☀️',
+      '🌙',
+      '💫',
+      '💎',
+      '🔮',
+      '🧿',
+      '🍀',
+      '🍁',
+      '🍄',
+      '🎯',
+      '🎨',
+      '🎭',
+      '🎤',
+      '🎧',
+      '🎷',
+      '🎸',
+      '🎹',
+      '🎺',
+      '🎻',
+      '🎲',
+      '♟️',
+      '🎮',
+      '🎰',
+      '🧩',
     ],
     'Arcade': [
-      '🏆', '👑', '🎖️', '🥇', '🥈', '🥉', '⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉',
-      '🥏', '🎱', '🏓', '🏸', '🥊', '🥋', '🛹', '🚗', '🚀', '🛸', '⛵', '⚓', '💣', '🧨',
-      '🗡️', '⚔️', '🛡️', '🔑', '🗝️', '💡', '⏰', '📱', '💻', '🔔', '🧲',
+      '🏆',
+      '👑',
+      '🎖️',
+      '🥇',
+      '🥈',
+      '🥉',
+      '⚽',
+      '🏀',
+      '🏈',
+      '⚾',
+      '🥎',
+      '🎾',
+      '🏐',
+      '🏉',
+      '🥏',
+      '🎱',
+      '🏓',
+      '🏸',
+      '🥊',
+      '🥋',
+      '🛹',
+      '🚗',
+      '🚀',
+      '🛸',
+      '⛵',
+      '⚓',
+      '💣',
+      '🧨',
+      '🗡️',
+      '⚔️',
+      '🛡️',
+      '🔑',
+      '🗝️',
+      '💡',
+      '⏰',
+      '📱',
+      '💻',
+      '🔔',
+      '🧲',
     ],
   };
 
@@ -103,7 +361,9 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
   Widget build(BuildContext context) {
     final theme = ref.watch(activeThemeSkinProvider);
     final isAccentLight = theme.primaryAccent.computeLuminance() > 0.5;
-    final accentBtnTextColor = isAccentLight ? const Color(0xFF1A1A1A) : Colors.white;
+    final accentBtnTextColor = isAccentLight
+        ? const Color(0xFF1A1A1A)
+        : Colors.white;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.82,
@@ -146,10 +406,18 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
                       _selectedSlot = 0;
                     });
                   },
-                  icon: Icon(Icons.refresh_rounded, size: 16, color: theme.primaryAccent),
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    size: 16,
+                    color: theme.primaryAccent,
+                  ),
                   label: Text(
                     'RESET',
-                    style: TextStyle(color: theme.primaryAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(
+                      color: theme.primaryAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
@@ -194,19 +462,25 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: isSelected ? theme.primaryAccent.withValues(alpha: 0.25) : theme.cardBg,
+                            color: isSelected
+                                ? theme.primaryAccent.withValues(alpha: 0.25)
+                                : theme.cardBg,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected ? theme.primaryAccent : theme.cardBorder,
+                              color: isSelected
+                                  ? theme.primaryAccent
+                                  : theme.cardBorder,
                               width: isSelected ? 2.5 : 1.0,
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: theme.primaryAccent.withValues(alpha: 0.3),
+                                      color: theme.primaryAccent.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       blurRadius: 8,
                                       spreadRadius: 1,
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -237,8 +511,14 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
                       style: TextStyle(color: theme.textPrimary, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'Type any custom emoji...',
-                        hintStyle: TextStyle(color: theme.textSecondary, fontSize: 13),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                        hintStyle: TextStyle(
+                          color: theme.textSecondary,
+                          fontSize: 13,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 0,
+                        ),
                         filled: true,
                         fillColor: theme.surfaceDark,
                         border: OutlineInputBorder(
@@ -266,7 +546,10 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
                     ),
                   ),
                   onPressed: _applyDirectInput,
-                  child: const Text('SET', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'SET',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -278,7 +561,9 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
             indicatorColor: theme.primaryAccent,
             labelColor: theme.primaryAccent,
             unselectedLabelColor: theme.textSecondary,
-            tabs: _categories.keys.map((cat) => Tab(text: cat.toUpperCase())).toList(),
+            tabs: _categories.keys
+                .map((cat) => Tab(text: cat.toUpperCase()))
+                .toList(),
           ),
           Expanded(
             child: TabBarView(
@@ -325,7 +610,9 @@ class _CustomEmojiPickerSheetState extends ConsumerState<CustomEmojiPickerSheet>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryAccent,
                   foregroundColor: accentBtnTextColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 4,
                 ),
                 onPressed: () {
@@ -364,10 +651,12 @@ class SingleEmojiPickerSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SingleEmojiPickerSheet> createState() => _SingleEmojiPickerSheetState();
+  ConsumerState<SingleEmojiPickerSheet> createState() =>
+      _SingleEmojiPickerSheetState();
 }
 
-class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet> with SingleTickerProviderStateMixin {
+class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
+    with SingleTickerProviderStateMixin {
   late String _selectedEmoji;
   late TabController _tabController;
   final TextEditingController _directInputController = TextEditingController();
@@ -376,7 +665,10 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
   void initState() {
     super.initState();
     _selectedEmoji = widget.initialEmoji;
-    _tabController = TabController(length: _CustomEmojiPickerSheetState._categories.length, vsync: this);
+    _tabController = TabController(
+      length: _CustomEmojiPickerSheetState._categories.length,
+      vsync: this,
+    );
   }
 
   @override
@@ -408,7 +700,9 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
   Widget build(BuildContext context) {
     final theme = ref.watch(activeThemeSkinProvider);
     final isAccentLight = theme.primaryAccent.computeLuminance() > 0.5;
-    final accentBtnTextColor = isAccentLight ? const Color(0xFF1A1A1A) : Colors.white;
+    final accentBtnTextColor = isAccentLight
+        ? const Color(0xFF1A1A1A)
+        : Colors.white;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.78,
@@ -452,7 +746,10 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: theme.primaryAccent),
                   ),
-                  child: Text(_selectedEmoji, style: const TextStyle(fontSize: 26)),
+                  child: Text(
+                    _selectedEmoji,
+                    style: const TextStyle(fontSize: 26),
+                  ),
                 ),
               ],
             ),
@@ -469,13 +766,28 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
                       style: TextStyle(color: theme.textPrimary, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'Paste custom emoji...',
-                        hintStyle: TextStyle(color: theme.textSecondary.withValues(alpha: 0.6), fontSize: 13),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        hintStyle: TextStyle(
+                          color: theme.textSecondary.withValues(alpha: 0.6),
+                          fontSize: 13,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         filled: true,
                         fillColor: theme.surfaceDark,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.cardBorder)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.cardBorder)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.primaryAccent)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: theme.cardBorder),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: theme.cardBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: theme.primaryAccent),
+                        ),
                       ),
                       onSubmitted: (_) => _applyDirectInput(),
                     ),
@@ -487,10 +799,15 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
                     backgroundColor: theme.primaryAccent,
                     foregroundColor: accentBtnTextColor,
                     padding: const EdgeInsets.symmetric(horizontal: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onPressed: _applyDirectInput,
-                  child: const Text('SET', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  child: const Text(
+                    'SET',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
                 ),
               ],
             ),
@@ -501,12 +818,16 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
             indicatorColor: theme.primaryAccent,
             labelColor: theme.primaryAccent,
             unselectedLabelColor: theme.textSecondary,
-            tabs: _CustomEmojiPickerSheetState._categories.keys.map((cat) => Tab(text: cat)).toList(),
+            tabs: _CustomEmojiPickerSheetState._categories.keys
+                .map((cat) => Tab(text: cat))
+                .toList(),
           ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: _CustomEmojiPickerSheetState._categories.values.map((emojiList) {
+              children: _CustomEmojiPickerSheetState._categories.values.map((
+                emojiList,
+              ) {
                 return GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -524,7 +845,11 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
                         decoration: BoxDecoration(
                           color: theme.surfaceDark,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: emoji == _selectedEmoji ? theme.primaryAccent : theme.cardBorder),
+                          border: Border.all(
+                            color: emoji == _selectedEmoji
+                                ? theme.primaryAccent
+                                : theme.cardBorder,
+                          ),
                         ),
                         child: Center(
                           child: Text(
@@ -548,7 +873,9 @@ class _SingleEmojiPickerSheetState extends ConsumerState<SingleEmojiPickerSheet>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryAccent,
                   foregroundColor: accentBtnTextColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 4,
                 ),
                 onPressed: () {

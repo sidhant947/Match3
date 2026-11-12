@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';
 import 'package:match3/ui/providers.dart';
@@ -31,7 +31,8 @@ class TangibleButton extends ConsumerStatefulWidget {
   ConsumerState<TangibleButton> createState() => _TangibleButtonState();
 }
 
-class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTickerProviderStateMixin {
+class _TangibleButtonState extends ConsumerState<TangibleButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   bool _isPressed = false;
 
@@ -84,22 +85,31 @@ class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTick
     final List<Color> gradientColors = widget.color != null
         ? [widget.color!.withValues(alpha: 0.88), widget.color!]
         : (widget.isSecondary
-            ? [theme.cardBg, theme.surfaceDark]
-            : [theme.primaryAccent.withValues(alpha: 0.88), theme.primaryAccent]);
+              ? [theme.cardBg, theme.surfaceDark]
+              : [
+                  theme.primaryAccent.withValues(alpha: 0.88),
+                  theme.primaryAccent,
+                ]);
 
-    final Color strokeColor = widget.borderColor ??
+    final Color strokeColor =
+        widget.borderColor ??
         (widget.color != null
             ? widget.color!.withValues(alpha: 0.6)
             : (widget.isSecondary
-                ? theme.cardBorder
-                : theme.primaryAccent.withValues(alpha: 0.6)));
+                  ? theme.cardBorder
+                  : theme.primaryAccent.withValues(alpha: 0.6)));
 
-    final Color effectiveTextColor = widget.textColor ??
+    final Color effectiveTextColor =
+        widget.textColor ??
         (widget.color != null
-            ? (widget.color!.computeLuminance() > 0.5 ? Colors.black : Colors.white)
+            ? (widget.color!.computeLuminance() > 0.5
+                  ? Colors.black
+                  : Colors.white)
             : (widget.isSecondary
-                ? theme.textPrimary
-                : (theme.primaryAccent.computeLuminance() > 0.5 ? Colors.black : Colors.white)));
+                  ? theme.textPrimary
+                  : (theme.primaryAccent.computeLuminance() > 0.5
+                        ? Colors.black
+                        : Colors.white)));
 
     return GestureDetector(
       onTapDown: _handleTapDown,
@@ -122,10 +132,7 @@ class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTick
                     end: Alignment.bottomCenter,
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: strokeColor,
-                    width: 2.0,
-                  ),
+                  border: Border.all(color: strokeColor, width: 2.0),
                   boxShadow: [
                     BoxShadow(
                       color: theme.shadowColor,
@@ -142,11 +149,7 @@ class _TangibleButtonState extends ConsumerState<TangibleButton> with SingleTick
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (widget.icon != null) ...[
-                        Icon(
-                          widget.icon,
-                          color: effectiveTextColor,
-                          size: 20,
-                        ),
+                        Icon(widget.icon, color: effectiveTextColor, size: 20),
                         const SizedBox(width: 8),
                       ],
                       Text(

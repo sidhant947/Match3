@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'app_colors.dart';
 
 class _NoTransitionBuilder extends PageTransitionsBuilder {
@@ -53,17 +53,61 @@ class AppTheme {
       thickness: 1,
     ),
     textTheme: const TextTheme(
-      displayLarge: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: -0.5),
-      displayMedium: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: -0.5),
-      displaySmall: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: -0.5),
-      headlineLarge: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: -0.5),
-      headlineMedium: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: -0.5),
-      headlineSmall: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: -0.5),
-      titleLarge: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: 0.5),
-      titleMedium: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, letterSpacing: 0.5),
-      bodyLarge: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, fontWeight: FontWeight.w500),
-      bodyMedium: TextStyle(fontFamily: 'BebasNeue', color: AppColors.subtext, fontWeight: FontWeight.normal),
-      labelLarge: TextStyle(fontFamily: 'BebasNeue', color: AppColors.headingDark, fontWeight: FontWeight.bold),
+      displayLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: -0.5,
+      ),
+      displayMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: -0.5,
+      ),
+      displaySmall: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: -0.5,
+      ),
+      headlineLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: -0.5,
+      ),
+      headlineMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: -0.5,
+      ),
+      titleLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: 0.5,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        letterSpacing: 0.5,
+      ),
+      bodyLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        fontWeight: FontWeight.w500,
+      ),
+      bodyMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.subtext,
+        fontWeight: FontWeight.normal,
+      ),
+      labelLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: AppColors.headingDark,
+        fontWeight: FontWeight.bold,
+      ),
     ),
   );
 
@@ -90,17 +134,61 @@ class AppTheme {
       thickness: 1,
     ),
     textTheme: const TextTheme(
-      displayLarge: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: -0.5),
-      displayMedium: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: -0.5),
-      displaySmall: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: -0.5),
-      headlineLarge: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: -0.5),
-      headlineMedium: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: -0.5),
-      headlineSmall: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: -0.5),
-      titleLarge: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: 0.5),
-      titleMedium: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), letterSpacing: 0.5),
-      bodyLarge: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), fontWeight: FontWeight.w500),
-      bodyMedium: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF88736B), fontWeight: FontWeight.normal),
-      labelLarge: TextStyle(fontFamily: 'BebasNeue', color: Color(0xFF2E2421), fontWeight: FontWeight.bold),
+      displayLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: -0.5,
+      ),
+      displayMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: -0.5,
+      ),
+      displaySmall: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: -0.5,
+      ),
+      headlineLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: -0.5,
+      ),
+      headlineMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: -0.5,
+      ),
+      titleLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: 0.5,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        letterSpacing: 0.5,
+      ),
+      bodyLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        fontWeight: FontWeight.w500,
+      ),
+      bodyMedium: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF88736B),
+        fontWeight: FontWeight.normal,
+      ),
+      labelLarge: TextStyle(
+        fontFamily: 'BebasNeue',
+        color: Color(0xFF2E2421),
+        fontWeight: FontWeight.bold,
+      ),
     ),
   );
 }

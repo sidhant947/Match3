@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class AppThemeSkin {
   final String id;
@@ -63,12 +63,12 @@ class AppThemeSkin {
     brightness: Brightness.light,
   );
 
-  static const List<AppThemeSkin> allSkins = [
-    darkSkin,
-    lightSkin,
-  ];
+  static const List<AppThemeSkin> allSkins = [darkSkin, lightSkin];
 
-  static AppThemeSkin getSkin(String? themeId, [Brightness? platformBrightness]) {
+  static AppThemeSkin getSkin(
+    String? themeId, [
+    Brightness? platformBrightness,
+  ]) {
     if (themeId == 'system') {
       return platformBrightness == Brightness.light ? lightSkin : darkSkin;
     }

@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
@@ -88,7 +88,10 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     _backButton(theme),
@@ -166,7 +169,10 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
     bool isClickable = !isLocked;
 
     if (isCompleted) {
-      final stars = ref.read(homeViewModelProvider).progress?.levelStars[levelNumber.toString()] ?? 0;
+      final stars =
+          ref.read(homeViewModelProvider).progress?.levelStars[levelNumber
+              .toString()] ??
+          0;
       gradientColors = [theme.cardBg, theme.surfaceDark];
       borderColor = theme.primaryAccent.withValues(alpha: 0.7);
 
@@ -200,16 +206,23 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
               return Icon(
                 active ? Icons.star_rounded : Icons.star_border_rounded,
                 size: 13,
-                color: active ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
+                color: active
+                    ? theme.primaryAccent
+                    : theme.textSecondary.withValues(alpha: 0.3),
               );
             }),
           ),
         ],
       );
     } else if (isCurrent) {
-      gradientColors = [theme.primaryAccent.withValues(alpha: 0.88), theme.primaryAccent];
+      gradientColors = [
+        theme.primaryAccent.withValues(alpha: 0.88),
+        theme.primaryAccent,
+      ];
       borderColor = theme.primaryAccent;
-      final textColor = theme.primaryAccent.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+      final textColor = theme.primaryAccent.computeLuminance() > 0.5
+          ? Colors.black
+          : Colors.white;
 
       content = FittedBox(
         fit: BoxFit.scaleDown,
@@ -261,10 +274,7 @@ class _LevelSelectViewState extends ConsumerState<LevelSelectView> {
             end: Alignment.bottomCenter,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: borderColor,
-            width: 2.0,
-          ),
+          border: Border.all(color: borderColor, width: 2.0),
           boxShadow: [
             BoxShadow(
               color: theme.shadowColor,

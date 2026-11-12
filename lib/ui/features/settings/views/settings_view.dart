@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:match3/domain/models/user_progress.dart';
@@ -89,7 +89,9 @@ class SettingsView extends ConsumerWidget {
     required AppThemeSkin theme,
   }) {
     final activeColor = theme.primaryAccent;
-    final activeTextColor = activeColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final activeTextColor = activeColor.computeLuminance() > 0.5
+        ? Colors.black
+        : Colors.white;
 
     return Expanded(
       child: GestureDetector(
@@ -382,7 +384,10 @@ class SettingsView extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: theme.cardBg,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: theme.cardBorder, width: 1.5),
+                          border: Border.all(
+                            color: theme.cardBorder,
+                            width: 1.5,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: theme.shadowColor,
@@ -397,7 +402,9 @@ class SettingsView extends ConsumerWidget {
                               ref: ref,
                               id: 'dark',
                               label: 'DARK',
-                              isSelected: currentThemeId != 'light' && currentThemeId != 'system',
+                              isSelected:
+                                  currentThemeId != 'light' &&
+                                  currentThemeId != 'system',
                               theme: theme,
                             ),
                             _themeOptionButton(
@@ -624,8 +631,7 @@ class SettingsView extends ConsumerWidget {
                       _settingToggleRow(
                         icon: Icons.celebration_rounded,
                         title: 'ENABLE CONFETTI CELEBRATION',
-                        subtitle:
-                            'Show confetti animation on level complete',
+                        subtitle: 'Show confetti animation on level complete',
                         value: confettiCelebrationEnabled,
                         onChanged: (val) {
                           if (val) HapticService.lightImpact();

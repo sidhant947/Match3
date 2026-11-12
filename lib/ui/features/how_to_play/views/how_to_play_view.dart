@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
 import 'package:match3/ui/core/utils/haptic_service.dart';

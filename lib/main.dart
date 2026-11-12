@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,9 +15,9 @@ void main() async {
   await hiveService.init();
   await SoundService.init();
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
+  );
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -26,9 +26,7 @@ void main() async {
 
   runApp(
     ProviderScope(
-      overrides: [
-        hiveServiceProvider.overrideWithValue(hiveService),
-      ],
+      overrides: [hiveServiceProvider.overrideWithValue(hiveService)],
       child: const MatchThreeApp(),
     ),
   );
@@ -42,7 +40,9 @@ class MatchThreeApp extends ConsumerWidget {
     final theme = ref.watch(activeThemeSkinProvider);
     return MaterialApp(
       title: 'Match Three',
-      theme: theme.brightness == Brightness.light ? AppTheme.light : AppTheme.dark,
+      theme: theme.brightness == Brightness.light
+          ? AppTheme.light
+          : AppTheme.dark,
       home: const HomeView(),
       debugShowCheckedModeBanner: false,
     );

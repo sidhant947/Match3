@@ -1,12 +1,9 @@
 import 'dart:math';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:match3/domain/models/gem.dart';
 
 class CustomGemPainter extends CustomPainter {
-  const CustomGemPainter({
-    required this.gemType,
-    this.emoji,
-  });
+  const CustomGemPainter({required this.gemType, this.emoji});
 
   final GemType gemType;
   final String? emoji;
@@ -58,11 +55,7 @@ class CustomGemPainter extends CustomPainter {
 }
 
 class GemWidget extends StatelessWidget {
-  const GemWidget({
-    super.key,
-    required this.gemType,
-    this.emoji,
-  });
+  const GemWidget({super.key, required this.gemType, this.emoji});
 
   final GemType gemType;
   final String? emoji;
@@ -70,10 +63,7 @@ class GemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: CustomGemPainter(
-        gemType: gemType,
-        emoji: emoji,
-      ),
+      painter: CustomGemPainter(gemType: gemType, emoji: emoji),
     );
   }
 }

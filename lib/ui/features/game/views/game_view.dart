@@ -1,8 +1,9 @@
 import 'dart:math';
 import 'package:flame/game.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:match3/domain/models/game_state_model.dart';
 import 'package:match3/domain/models/level_generator.dart';
 import 'package:match3/domain/models/level_goal.dart';
 import 'package:match3/ui/core/theme/app_theme_skin.dart';
@@ -60,6 +61,8 @@ class _GameViewState extends ConsumerState<GameView> {
   Widget build(BuildContext context) {
     final theme = ref.watch(activeThemeSkinProvider);
     _game.themeSkin = theme;
+    final size = MediaQuery.sizeOf(context);
+    final isSquareOrLandscape = size.aspectRatio >= 0.70;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -93,7 +96,10 @@ class _GameViewState extends ConsumerState<GameView> {
                     Column(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 6.0,
+                          ),
                           child: Row(
                             children: [
                               _circleButton(
@@ -107,12 +113,15 @@ class _GameViewState extends ConsumerState<GameView> {
                                     widget.isZenMode
                                         ? 'ZEN MODE'
                                         : (widget.isTwistMode
-                                            ? 'TWIST MODE'
-                                            : (widget.isTimeAttack
-                                                ? 'TIME ATTACK'
-                                                : ((state.levelConfig?.isTimed ?? false)
-                                                    ? 'CHALLENGE ${state.levelNumber}'
-                                                    : 'LEVEL ${state.levelNumber}'))),
+                                              ? 'TWIST MODE'
+                                              : (widget.isTimeAttack
+                                                    ? 'TIME ATTACK'
+                                                    : ((state
+                                                                  .levelConfig
+                                                                  ?.isTimed ??
+                                                              false)
+                                                          ? 'CHALLENGE ${state.levelNumber}'
+                                                          : 'LEVEL ${state.levelNumber}'))),
                                     style: TextStyle(
                                       fontFamily: 'BebasNeue',
                                       color: theme.textPrimary,
@@ -143,120 +152,95 @@ class _GameViewState extends ConsumerState<GameView> {
                             ],
                           ),
                         ),
-                        if (!widget.isZenMode && !widget.isTimeAttack && !widget.isTwistMode) ...[
+                        if (!widget.isZenMode &&
+                            !widget.isTimeAttack &&
+                            !widget.isTwistMode) ...[
                           const SizedBox(height: 4),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: theme.cardBg,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: theme.cardBorder, width: 1.5),
+                          if (isSquareOrLandscape)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ),
+                              child: IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      flex: 1,
+                                      child: _buildStatBadge(
+                                        title: 'SCORE',
+                                        value: '${state.score}',
+                                        subValue: '',
+                                        color: theme.primaryAccent,
+                                        theme: theme,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 2,
+                                      child: _buildGoalBadge(
+                                        state: state,
+                                        theme: theme,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 1,
+                                      child: _buildMovesOrTimeBadge(
+                                        state: state,
+                                        theme: theme,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ),
+                              child: _buildGoalBadge(
+                                state: state,
+                                theme: theme,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
                               ),
                               child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  if (state.goal.targetFruitEmoji != null) ...[
-                                    Text(
-                                      state.goal.targetFruitEmoji!,
-                                      style: const TextStyle(fontSize: 22),
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ] else if (state.goal.type == LevelGoalType.createSpecials) ...[
-                                    Icon(Icons.auto_awesome_rounded, color: theme.primaryAccent, size: 20),
-                                    const SizedBox(width: 8),
-                                  ] else if (state.goal.type == LevelGoalType.comboMaster) ...[
-                                    const Icon(Icons.flash_on_rounded, color: Color(0xFFFF8523), size: 20),
-                                    const SizedBox(width: 8),
-                                  ] else if (state.goal.type == LevelGoalType.clearJelly) ...[
-                                    const Icon(Icons.ac_unit_rounded, color: Color(0xFF64D2FF), size: 20),
-                                    const SizedBox(width: 8),
-                                  ],
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          state.goal.title,
-                                          style: TextStyle(
-                                            fontFamily: 'BebasNeue',
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w900,
-                                            color: theme.primaryAccent,
-                                            letterSpacing: 1.0,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            value: state.goal.progress,
-                                            minHeight: 6,
-                                            backgroundColor: theme.surfaceDark,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              state.goal.isCompleted ? const Color(0xFF4ECCA3) : theme.primaryAccent,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    child: _buildStatBadge(
+                                      title: 'SCORE',
+                                      value: '${state.score}',
+                                      subValue: '',
+                                      color: theme.primaryAccent,
+                                      theme: theme,
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    '${state.goal.currentValue}/${state.goal.targetValue}',
-                                    style: TextStyle(
-                                      fontFamily: 'BebasNeue',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w900,
-                                      color: state.goal.isCompleted ? const Color(0xFF4ECCA3) : theme.textPrimary,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildMovesOrTimeBadge(
+                                      state: state,
+                                      theme: theme,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: _buildStatBadge(
-                                    title: 'SCORE',
-                                    value: '${state.score}',
-                                    subValue: '',
-                                    color: theme.primaryAccent,
-                                    theme: theme,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: (state.levelConfig?.isTimed ?? false)
-                                      ? _buildStatBadge(
-                                          title: 'TIME LEFT',
-                                          value: '${state.timeLeft}s',
-                                          subValue: '',
-                                          color: state.timeLeft <= 10 ? const Color(0xFFFF4D4D) : theme.primaryAccent,
-                                          theme: theme,
-                                        )
-                                      : _buildStatBadge(
-                                          title: 'MOVES',
-                                          value: '${state.movesLeft}',
-                                          subValue: '',
-                                          color: state.movesLeft <= 5 ? const Color(0xFFFF4D4D) : theme.textPrimary,
-                                          theme: theme,
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ],
                         if (widget.isZenMode || widget.isTwistMode) ...[
                           const SizedBox(height: 6),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -276,7 +260,9 @@ class _GameViewState extends ConsumerState<GameView> {
                         if (widget.isTimeAttack) ...[
                           const SizedBox(height: 6),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -295,7 +281,9 @@ class _GameViewState extends ConsumerState<GameView> {
                                     title: 'TIME LEFT',
                                     value: '${state.timeLeft}s',
                                     subValue: '',
-                                    color: state.timeLeft <= 10 ? const Color(0xFFFF4D4D) : theme.primaryAccent,
+                                    color: state.timeLeft <= 10
+                                        ? const Color(0xFFFF4D4D)
+                                        : theme.primaryAccent,
                                     theme: theme,
                                   ),
                                 ),
@@ -303,150 +291,202 @@ class _GameViewState extends ConsumerState<GameView> {
                             ),
                           ),
                         ],
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final twistHeight = widget.isTwistMode ? 64.0 : 0.0;
-                            const bannerHeight = 40.0;
-                            final maxBoardHeight = constraints.maxHeight - twistHeight - bannerHeight - 12.0;
-                            final maxBoardWidth = constraints.maxWidth - 24.0;
-                            final boardDimension = max(0.0, min(maxBoardWidth, maxBoardHeight));
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final twistHeight = widget.isTwistMode
+                                  ? 64.0
+                                  : 0.0;
+                              final bannerHeight = isSquareOrLandscape
+                                  ? 0.0
+                                  : 40.0;
+                              final maxBoardHeight =
+                                  constraints.maxHeight -
+                                  twistHeight -
+                                  bannerHeight -
+                                  (isSquareOrLandscape ? 4.0 : 12.0);
+                              final maxBoardWidth = constraints.maxWidth - 24.0;
+                              final boardDimension = max(
+                                0.0,
+                                min(maxBoardWidth, maxBoardHeight),
+                              );
 
-                            return Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  height: bannerHeight,
-                                  child: Center(
-                                    child: IgnorePointer(
-                                      child: _ComboBannerWidget(comboCount: state.comboCount),
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (!isSquareOrLandscape) ...[
+                                    SizedBox(
+                                      height: bannerHeight,
+                                      child: Center(
+                                        child: IgnorePointer(
+                                          child: _ComboBannerWidget(
+                                            comboCount: state.comboCount,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                  ],
+                                  SizedBox(
+                                    width: boardDimension,
+                                    height: boardDimension,
+                                    child: Listener(
+                                      onPointerDown: (event) {
+                                        _pointerStartPos = event.localPosition;
+                                        _hasSwiped = false;
+                                      },
+                                      onPointerMove: (event) {
+                                        if (_pointerStartPos == null) return;
+                                        final delta =
+                                            event.localPosition -
+                                            _pointerStartPos!;
+                                        if (widget.isTwistMode) {
+                                          if (delta.distance > 10) {
+                                            _hasSwiped = true;
+                                            _game.handleTwistDrag(
+                                              event.localPosition,
+                                            );
+                                          }
+                                        } else {
+                                          if (!_hasSwiped &&
+                                              delta.distance > 20) {
+                                            _hasSwiped = true;
+                                            _game.handleSwipeAt(
+                                              _pointerStartPos!,
+                                              event.localPosition,
+                                            );
+                                          }
+                                        }
+                                      },
+                                      onPointerUp: (event) {
+                                        if (!_hasSwiped &&
+                                            _pointerStartPos != null) {
+                                          _game.handleTapAt(_pointerStartPos!);
+                                        }
+                                        _pointerStartPos = null;
+                                      },
+                                      child: GameWidget(game: _game),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                SizedBox(
-                                  width: boardDimension,
-                                  height: boardDimension,
-                                  child: Listener(
-                                    onPointerDown: (event) {
-                                      _pointerStartPos = event.localPosition;
-                                      _hasSwiped = false;
-                                    },
-                                    onPointerMove: (event) {
-                                      if (_pointerStartPos == null) return;
-                                      final delta = event.localPosition - _pointerStartPos!;
-                                      if (widget.isTwistMode) {
-                                        if (delta.distance > 10) {
-                                          _hasSwiped = true;
-                                          _game.handleTwistDrag(event.localPosition);
-                                        }
-                                      } else {
-                                        if (!_hasSwiped && delta.distance > 20) {
-                                          _hasSwiped = true;
-                                          _game.handleSwipeAt(_pointerStartPos!, event.localPosition);
-                                        }
-                                      }
-                                    },
-                                    onPointerUp: (event) {
-                                      if (!_hasSwiped && _pointerStartPos != null) {
-                                        _game.handleTapAt(_pointerStartPos!);
-                                      }
-                                      _pointerStartPos = null;
-                                    },
-                                    child: GameWidget(game: _game),
-                                  ),
-                                ),
-                                if (widget.isTwistMode) ...[
-                                  const SizedBox(height: 8),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                                    child: TangibleButton(
-                                      text: 'TWIST ↻',
-                                      onPressed: _game.twistCurrent,
+                                  if (widget.isTwistMode) ...[
+                                    const SizedBox(height: 8),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 40.0,
+                                      ),
+                                      child: TangibleButton(
+                                        text: 'TWIST ↻',
+                                        onPressed: _game.twistCurrent,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
-                              ],
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  if (state.isShuffling)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        alignment: Alignment.center,
+                      ],
+                    ),
+                    if (state.isShuffling)
+                      Positioned.fill(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: theme.cardBg,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: theme.primaryAccent, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: theme.primaryAccent.withValues(alpha: 0.3),
-                                blurRadius: 16,
+                          color: Colors.black.withValues(alpha: 0.4),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.cardBg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: theme.primaryAccent,
+                                width: 2,
                               ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.shuffle_rounded, color: theme.primaryAccent, size: 24),
-                              const SizedBox(width: 10),
-                              Text(
-                                'NO MOVES! SHUFFLING...',
-                                style: TextStyle(
-                                  fontFamily: 'BebasNeue',
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                  color: theme.primaryAccent,
-                                  letterSpacing: 1.5,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: theme.primaryAccent.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 16,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.shuffle_rounded,
+                                  color: theme.primaryAccent,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'NO MOVES! SHUFFLING...',
+                                  style: TextStyle(
+                                    fontFamily: 'BebasNeue',
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: theme.primaryAccent,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  if (state.isGameOver && !widget.isZenMode && !widget.isTwistMode)
-                    _buildOverlay(
-                      title: widget.isTimeAttack
-                          ? "TIME'S UP!"
-                          : (isWin
-                              ? 'LEVEL COMPLETE!'
-                              : ((state.levelConfig?.isTimed ?? false) ? "TIME'S UP!" : 'OUT OF MOVES!')),
-                      message: widget.isTimeAttack
-                          ? 'Great run! Can you beat your score?'
-                          : (isWin
-                              ? 'Target reached with great combos!'
-                              : ((state.levelConfig?.isTimed ?? false)
-                                  ? 'Time ran out! Try again.'
-                                  : 'Give it another shot to clear this level.')),
-                      score: state.score,
-                      starsEarned: state.starsEarned,
-                      isWin: widget.isTimeAttack ? true : isWin,
-                      currentLevel: state.levelNumber,
-                      theme: theme,
-                      skipLevelEnabled: _viewModel.progressRepository.cachedProgress.skipLevelEnabled,
-                    ),
-                  if (state.isGameOver && !widget.isZenMode && !widget.isTwistMode && isWin && _viewModel.progressRepository.cachedProgress.confettiCelebrationEnabled)
-                    const Positioned.fill(
-                      child: IgnorePointer(
-                        child: _ConfettiCelebrationWidget(),
+                    if (state.isGameOver &&
+                        !widget.isZenMode &&
+                        !widget.isTwistMode)
+                      _buildOverlay(
+                        title: widget.isTimeAttack
+                            ? "TIME'S UP!"
+                            : (isWin
+                                  ? 'LEVEL COMPLETE!'
+                                  : ((state.levelConfig?.isTimed ?? false)
+                                        ? "TIME'S UP!"
+                                        : 'OUT OF MOVES!')),
+                        message: widget.isTimeAttack
+                            ? 'Great run! Can you beat your score?'
+                            : (isWin
+                                  ? 'Target reached with great combos!'
+                                  : ((state.levelConfig?.isTimed ?? false)
+                                        ? 'Time ran out! Try again.'
+                                        : 'Give it another shot to clear this level.')),
+                        score: state.score,
+                        starsEarned: state.starsEarned,
+                        isWin: widget.isTimeAttack ? true : isWin,
+                        currentLevel: state.levelNumber,
+                        theme: theme,
+                        skipLevelEnabled: _viewModel
+                            .progressRepository
+                            .cachedProgress
+                            .skipLevelEnabled,
                       ),
-                    ),
-                ],
-              );
-            },
+                    if (state.isGameOver &&
+                        !widget.isZenMode &&
+                        !widget.isTwistMode &&
+                        isWin &&
+                        _viewModel
+                            .progressRepository
+                            .cachedProgress
+                            .confettiCelebrationEnabled)
+                      const Positioned.fill(
+                        child: IgnorePointer(
+                          child: _ConfettiCelebrationWidget(),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Future<void> _confirmLeave() async {
     if (!mounted) return;
@@ -476,16 +516,27 @@ class _GameViewState extends ConsumerState<GameView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('RESUME', style: TextStyle(color: theme.primaryAccent, fontWeight: FontWeight.bold)),
+            child: Text(
+              'RESUME',
+              style: TextStyle(
+                color: theme.primaryAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF4D4D),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('LEAVE', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'LEAVE',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -521,11 +572,7 @@ class _GameViewState extends ConsumerState<GameView> {
           ],
           border: Border.all(color: theme.cardBorder, width: 1.5),
         ),
-        child: Icon(
-          icon,
-          size: iconSize,
-          color: theme.textPrimary,
-        ),
+        child: Icon(icon, size: iconSize, color: theme.textPrimary),
       ),
     );
   }
@@ -553,6 +600,7 @@ class _GameViewState extends ConsumerState<GameView> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
@@ -596,6 +644,137 @@ class _GameViewState extends ConsumerState<GameView> {
     );
   }
 
+  Widget _buildMovesOrTimeBadge({
+    required GameStateModel state,
+    required AppThemeSkin theme,
+  }) {
+    return (state.levelConfig?.isTimed ?? false)
+        ? _buildStatBadge(
+            title: 'TIME LEFT',
+            value: '${state.timeLeft}s',
+            subValue: '',
+            color: state.timeLeft <= 10
+                ? const Color(0xFFFF4D4D)
+                : theme.primaryAccent,
+            theme: theme,
+          )
+        : _buildStatBadge(
+            title: 'MOVES',
+            value: '${state.movesLeft}',
+            subValue: '',
+            color: state.movesLeft <= 5
+                ? const Color(0xFFFF4D4D)
+                : theme.textPrimary,
+            theme: theme,
+          );
+  }
+
+  Widget _buildGoalBadge({
+    required GameStateModel state,
+    required AppThemeSkin theme,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: theme.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.cardBorder,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor,
+            offset: const Offset(0, 2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (state.goal.targetFruitEmoji != null) ...[
+            Text(
+              state.goal.targetFruitEmoji!,
+              style: const TextStyle(fontSize: 22),
+            ),
+            const SizedBox(width: 8),
+          ] else if (state.goal.type == LevelGoalType.createSpecials) ...[
+            Icon(
+              Icons.auto_awesome_rounded,
+              color: theme.primaryAccent,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+          ] else if (state.goal.type == LevelGoalType.comboMaster) ...[
+            const Icon(
+              Icons.flash_on_rounded,
+              color: Color(0xFFFF8523),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+          ] else if (state.goal.type == LevelGoalType.clearJelly) ...[
+            const Icon(
+              Icons.ac_unit_rounded,
+              color: Color(0xFF64D2FF),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  state.goal.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'BebasNeue',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: theme.primaryAccent,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: state.goal.progress,
+                    minHeight: 6,
+                    backgroundColor: theme.surfaceDark,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      state.goal.isCompleted
+                          ? const Color(0xFF4ECCA3)
+                          : theme.primaryAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '${state.goal.currentValue}/${state.goal.targetValue}',
+            style: TextStyle(
+              fontFamily: 'BebasNeue',
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: state.goal.isCompleted
+                  ? const Color(0xFF4ECCA3)
+                  : theme.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOverlay({
     required String title,
     required String message,
@@ -608,7 +787,8 @@ class _GameViewState extends ConsumerState<GameView> {
   }) {
     final config = _viewModel.state.levelConfig;
     final reward = config?.reward;
-    final hasSpecialReward = isWin && reward != null && reward.type != MilestoneRewardType.none;
+    final hasSpecialReward =
+        isWin && reward != null && reward.type != MilestoneRewardType.none;
 
     return Container(
       color: Colors.transparent,
@@ -650,7 +830,9 @@ class _GameViewState extends ConsumerState<GameView> {
                         child: Icon(
                           Icons.star_rounded,
                           size: 32,
-                          color: earned ? theme.primaryAccent : theme.textSecondary.withValues(alpha: 0.3),
+                          color: earned
+                              ? theme.primaryAccent
+                              : theme.textSecondary.withValues(alpha: 0.3),
                         ),
                       );
                     }),
@@ -692,15 +874,15 @@ class _GameViewState extends ConsumerState<GameView> {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: theme.textSecondary),
                 ),
                 if (hasSpecialReward) ...[
                   const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.surfaceDark,
                       borderRadius: BorderRadius.circular(12),
@@ -709,7 +891,10 @@ class _GameViewState extends ConsumerState<GameView> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(reward.iconEmoji, style: const TextStyle(fontSize: 20)),
+                        Text(
+                          reward.iconEmoji,
+                          style: const TextStyle(fontSize: 20),
+                        ),
                         const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,7 +910,10 @@ class _GameViewState extends ConsumerState<GameView> {
                             ),
                             Text(
                               reward.description,
-                              style: TextStyle(fontSize: 10, color: theme.textSecondary),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: theme.textSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -735,7 +923,10 @@ class _GameViewState extends ConsumerState<GameView> {
                 ],
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.surfaceDark,
                     borderRadius: BorderRadius.circular(14),
@@ -808,7 +999,10 @@ class _GameViewState extends ConsumerState<GameView> {
                   fontSize: 15,
                   onPressed: () {
                     final Uri url = Uri.parse('https://ko-fi.com/sidhant947');
-                    launchUrl(url, mode: LaunchMode.externalApplication).catchError((_) => false);
+                    launchUrl(
+                      url,
+                      mode: LaunchMode.externalApplication,
+                    ).catchError((_) => false);
                   },
                 ),
               ],
@@ -829,13 +1023,20 @@ class _ComboBannerWidget extends StatefulWidget {
   State<_ComboBannerWidget> createState() => _ComboBannerWidgetState();
 }
 
-class _ComboBannerWidgetState extends State<_ComboBannerWidget> with SingleTickerProviderStateMixin {
+class _ComboBannerWidgetState extends State<_ComboBannerWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
   String _text = '';
 
-  static const _phrases = ['SWEET!', 'TASTY!', 'DELICIOUS!', 'DIVINE!', 'UNBELIEVABLE!'];
+  static const _phrases = [
+    'SWEET!',
+    'TASTY!',
+    'DELICIOUS!',
+    'DIVINE!',
+    'UNBELIEVABLE!',
+  ];
 
   @override
   void initState() {
@@ -845,7 +1046,13 @@ class _ComboBannerWidgetState extends State<_ComboBannerWidget> with SingleTicke
       duration: const Duration(milliseconds: 1200),
     );
     _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.5, end: 1.1).chain(CurveTween(curve: Curves.easeOutBack)), weight: 30),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.5,
+          end: 1.1,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
+      ),
       TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 40),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 30),
     ]).animate(_controller);
@@ -925,7 +1132,8 @@ class _ConfettiCelebrationWidget extends StatefulWidget {
   const _ConfettiCelebrationWidget();
 
   @override
-  State<_ConfettiCelebrationWidget> createState() => _ConfettiCelebrationWidgetState();
+  State<_ConfettiCelebrationWidget> createState() =>
+      _ConfettiCelebrationWidgetState();
 }
 
 class _ConfettiParticle {
@@ -956,7 +1164,8 @@ class _ConfettiParticle {
   });
 }
 
-class _ConfettiCelebrationWidgetState extends State<_ConfettiCelebrationWidget> with SingleTickerProviderStateMixin {
+class _ConfettiCelebrationWidgetState extends State<_ConfettiCelebrationWidget>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final List<_ConfettiParticle> _particles;
   static const _colors = [
@@ -1064,7 +1273,8 @@ class _ConfettiPainter extends CustomPainter {
     for (final p in particles) {
       final sway = sin(t * p.swaySpeed) * p.swayAmount;
       final currentX = (p.x * size.width) + (p.vx * t) + sway;
-      final currentY = (p.y * size.height) + (p.vy * t) + (0.5 * gravity * t * t);
+      final currentY =
+          (p.y * size.height) + (p.vy * t) + (0.5 * gravity * t * t);
       final currentRot = p.rotation + (p.rotationSpeed * t);
 
       final paint = Paint()..color = p.color;
@@ -1079,12 +1289,20 @@ class _ConfettiPainter extends CustomPainter {
         canvas.drawCircle(Offset.zero, p.size / 2, paint);
       } else if (p.shape == 1) {
         canvas.drawRect(
-          Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size * 0.55),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: p.size,
+            height: p.size * 0.55,
+          ),
           paint,
         );
       } else {
         canvas.drawRect(
-          Rect.fromCenter(center: Offset.zero, width: p.size * 1.5, height: p.size * 0.35),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: p.size * 1.5,
+            height: p.size * 0.35,
+          ),
           paint,
         );
       }
@@ -1093,5 +1311,6 @@ class _ConfettiPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) => oldDelegate.progress != progress;
+  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
