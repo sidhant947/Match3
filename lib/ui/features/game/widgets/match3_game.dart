@@ -23,8 +23,8 @@ class Match3Game extends FlameGame {
   int twistRotatorCol = 3;
   TwistRotatorComponent? _rotatorComponent;
 
-  double _shakeTimer = 0.0;
-  double _shakeIntensity = 0.0;
+  double _trauma = 0.0;
+  double _hitStopTimer = 0.0;
   final Random _random = Random();
 
   AppThemeSkin? themeSkin;
@@ -72,8 +72,7 @@ class Match3Game extends FlameGame {
   }
 
   void triggerShake(double intensity) {
-    _shakeIntensity = intensity;
-    _shakeTimer = 0.25;
+    _trauma = min(1.0, _trauma + (intensity / 6.0).clamp(0.25, 1.0));
     if (intensity >= 4.5) {
       HapticService.heavyImpact();
     } else {
@@ -81,17 +80,30 @@ class Match3Game extends FlameGame {
     }
   }
 
+  void triggerHitStop(double duration) {
+    _hitStopTimer = max(_hitStopTimer, duration);
+  }
+
   @override
   void update(double dt) {
+    if (_hitStopTimer > 0) {
+      _hitStopTimer -= dt;
+      return;
+    }
     super.update(dt);
-    if (_shakeTimer > 0) {
-      _shakeTimer -= dt;
-      if (_shakeTimer <= 0) {
+    if (_trauma > 0) {
+      _trauma = max(0.0, _trauma - dt * 2.5);
+      final shake = _trauma * _trauma;
+      final maxOffset = 14.0 * shake;
+      final maxAngle = 0.04 * shake;
+      final offsetX = (_random.nextDouble() * 2 - 1) * maxOffset;
+      final offsetY = (_random.nextDouble() * 2 - 1) * maxOffset;
+      final angle = (_random.nextDouble() * 2 - 1) * maxAngle;
+      camera.viewfinder.position = Vector2(offsetX, offsetY);
+      camera.viewfinder.angle = angle;
+      if (_trauma == 0.0) {
         camera.viewfinder.position = Vector2.zero();
-      } else {
-        final offsetX = (_random.nextDouble() * 2 - 1) * _shakeIntensity;
-        final offsetY = (_random.nextDouble() * 2 - 1) * _shakeIntensity;
-        camera.viewfinder.position = Vector2(offsetX, offsetY);
+        camera.viewfinder.angle = 0.0;
       }
     }
   }
@@ -159,8 +171,10 @@ class Match3Game extends FlameGame {
             ),
           );
           triggerShake(4.5);
+          triggerHitStop(0.04);
         } else if (comp.type == TileType.colorBomb) {
           triggerShake(6.0);
+          triggerHitStop(0.06);
         }
       }
     }
@@ -469,6 +483,8 @@ class FruitComponent extends PositionComponent {
   bool _needsBounce = false;
   int _lastRow = -1;
   double _hintPulseTimer = 0.0;
+  double _squashX = 1.0;
+  double _squashY = 1.0;
 
   FruitComponent({
     required this.id,
@@ -542,13 +558,21 @@ class FruitComponent extends PositionComponent {
       _bounceTimer += dt;
       final bounceOffset =
           sin(_bounceTimer * 18.0) * 12.0 * exp(-_bounceTimer * 6.0);
+      final squash =
+          sin(_bounceTimer * 18.0) * 0.22 * exp(-_bounceTimer * 7.0);
+      _squashX = 1.0 + squash;
+      _squashY = 1.0 - squash;
       position = Vector2(targetX, targetY + bounceOffset);
       if (_bounceTimer >= 0.8) {
         _isBouncing = false;
         _bounceTimer = 0.0;
+        _squashX = 1.0;
+        _squashY = 1.0;
         position = Vector2(targetX, targetY);
       }
     } else {
+      _squashX = 1.0;
+      _squashY = 1.0;
       if (dist < 0.5) {
         position = Vector2(targetX, targetY);
       } else {
@@ -565,7 +589,7 @@ class FruitComponent extends PositionComponent {
 
     canvas.save();
     canvas.translate(size.x / 2, size.y / 2);
-    canvas.scale(scaleVal);
+    canvas.scale(scaleVal * _squashX, scaleVal * _squashY);
 
     if (isHinted) {
       final hintGlowPaint = Paint()

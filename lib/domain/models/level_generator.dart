@@ -148,7 +148,7 @@ class LevelGenerator {
       baseMoves = 22;
     }
 
-    final int moves = baseMoves.clamp(18, 35);
+    int moves = baseMoves.clamp(18, 35);
     final LevelGoal goal = _generateGoal(
       effectiveLevel: effectiveLevel,
       cycleIndex: cycleIndex,
@@ -158,6 +158,10 @@ class LevelGenerator {
       chapterNumber: chapterNumber,
       moves: moves,
     );
+
+    if (goal.type == LevelGoalType.targetFruit) {
+      moves += 7;
+    }
 
     final Set<String> jelly = _generateJellyLayout(goal, rows, cols, cycleIndex);
     final Set<String> frozen = _generateObstacleLayout(effectiveLevel, diffType, rows, cols, isFrozen: true);
